@@ -1,832 +1,1534 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico do Ibovespa - Dados em Tempo Real</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 2.2rem;
-        }
-        
-        .subtitle {
-            color: #7f8c8d;
-            font-size: 1.1rem;
-        }
-        
-        .ibovespa-info {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .info-card {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            min-width: 200px;
-            text-align: center;
-        }
-        
-        .info-card h3 {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .info-card .value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-        
-        .info-card .value.positive {
-            color: #27ae60;
-        }
-        
-        .info-card .value.negative {
-            color: #e74c3c;
-        }
-        
-        .chart-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            position: relative;
-            height: 500px;
-        }
-        
-        .controls {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #2980b9;
-        }
-        
-        button.active {
-            background-color: #2c3e50;
-        }
-        
-        .data-info {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-        }
-        
-        .data-info h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        th {
-            background-color: #f8f9fa;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-        
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            text-align: center;
-        }
-        
-        .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error {
-            background-color: #ffeaea;
-            border-left: 4px solid #e74c3c;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
-        }
-        
-        @media (max-width: 768px) {
-            .chart-container {
-                padding: 15px;
-                height: 400px;
-            }
-            
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .info-card {
-                min-width: 150px;
-                padding: 15px;
-            }
-            
-            .info-card .value {
-                font-size: 1.5rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            
-            .chart-container {
-                height: 350px;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            button {
-                width: 100%;
-                max-width: 250px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Clube Morpheus - Ibovespa</title>
+  <link rel="icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+      font-family: "DM Sans", sans-serif;
+      color: #000;
+      height: 100%;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.9);
+      padding: 10px 20px;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    .navbar .welcome {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .navbar .links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .navbar a:hover {
+      transform: scale(1.1);
+    }
+
+    .container {
+      margin-top: 60px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 20px 0;
+      min-height: calc(100vh - 80px);
+    }
+
+    .header-info {
+      width: 95%;
+      max-width: 1200px;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .header-info h1 {
+      font-size: 22px;
+      color: #1E4DB7;
+      margin: 0 0 2px 0;
+      text-align: left;
+    }
+
+    .cnpj {
+      font-size: 13px;
+      color: #555;
+      margin: 0 0 2px 0;
+      text-align: left;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #555;
+      margin: 0;
+      text-align: left;
+    }
+
+    /* CORREÇÃO: Garantir mesma largura para gráficos e tabela */
+    .charts-main-container,
+    .data-table-container {
+      width: 95%;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .charts-main-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .main-chart-container {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 400px;
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    canvas {
+      width: 100%;
+      height: 380px !important;
+    }
+
+    .side-charts-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 250px;
+    }
+
+    .side-chart {
+      background-color: #fff;
+      border-radius: 0;
+      padding: 15px;
+      box-shadow: none;
+    }
+
+    .side-chart h3 {
+      font-size: 14px;
+      color: #000000;
+      margin: 0 0 15px 0;
+      text-align: center;
+      font-weight: 600;
+      font-family: "Montserrat", sans-serif;
+      letter-spacing: 0.5px;
+    }
+
+    .side-chart canvas {
+      height: 120px !important;
+    }
+
+    .data-table-container {
+      margin-top: 30px;
+      overflow: visible;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "Montserrat", sans-serif;
+      margin-bottom: 20px;
+      border: none;
+      table-layout: fixed;
+    }
+
+    .data-table th {
+      background-color: #164CAD;
+      color: white;
+      padding: 8px 4px;
+      text-align: center;
+      font-weight: bold;
+      border: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 6px 4px;
+      text-align: center;
+      border: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .data-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .data-table tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .data-table .header-row {
+      background-color: #164CAD;
+      color: white;
+    }
+
+    .data-table .column-w {
+      background-color: #164CAD;
+      color: white;
+      font-weight: bold;
+    }
+
+    .data-table th:nth-last-child(3),
+    .data-table td:nth-last-child(3) {
+      border-right: 2px solid #a3a3a3;
+    }
+
+    .data-table .merged-cell {
+      vertical-align: middle;
+    }
+
+    .data-table th:nth-child(n+4),
+    .data-table td:nth-child(n+4) {
+      width: 50px;
+      min-width: 50px;
+      max-width: 50px;
+    }
+
+    .data-table th:nth-child(1),
+    .data-table td:nth-child(1) {
+      width: 80px;
+    }
+
+    .data-table th:nth-child(2),
+    .data-table td:nth-child(2) {
+      width: 70px;
+    }
+
+    .data-table th:nth-child(3),
+    .data-table td:nth-child(3) {
+      width: 60px;
+    }
+
+    .desktop-device .data-table {
+      font-size: 14px;
+    }
+
+    .desktop-device .data-table th,
+    .desktop-device .data-table td {
+      padding: 10px 6px;
+    }
+
+    /* ESTILOS PARA SMARTPHONE VERTICAL */
+    .mobile-device .charts-main-container,
+    .mobile-device .data-table-container {
+      width: 98%;
+      max-width: none;
+    }
+
+    .mobile-device .charts-main-container {
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mobile-device .main-chart-container {
+      flex: none;
+      width: 100%;
+    }
+
+    .mobile-device .chart-container {
+      width: 100%;
+      height: 380px; /* Aumentado */
+    }
+
+    .mobile-device .main-chart-container canvas {
+      height: 360px !important; /* Aumentado */
+    }
+
+    .mobile-device .side-charts-container {
+      flex: none;
+      flex-direction: row;
+      gap: 15px;
+      width: 100%;
+    }
+
+    .mobile-device .side-chart {
+      flex: 1;
+      width: 50%;
+    }
+
+    .mobile-device .side-chart h3 {
+      font-size: 18px; /* Aumentado */
+      margin-bottom: 18px;
+    }
+
+    .mobile-device .side-chart canvas {
+      height: 160px !important; /* Aumentado */
+    }
+
+    .mobile-device .data-table-container {
+      padding: 0 10px;
+    }
+
+    .mobile-device .data-table {
+      font-size: 12px; /* Aumentado */
+      margin: 0 auto;
+    }
+
+    .mobile-device .data-table th,
+    .mobile-device .data-table td {
+      padding: 5px 3px; /* Aumentado */
+    }
+
+    .mobile-device .data-table th:nth-child(n+4),
+    .mobile-device .data-table td:nth-child(n+4) {
+      width: 45px;
+      min-width: 45px;
+      max-width: 45px;
+    }
+
+    .mobile-device .data-table th:nth-child(1),
+    .mobile-device .data-table td:nth-child(1) {
+      width: 70px;
+    }
+
+    .mobile-device .data-table th:nth-child(2),
+    .mobile-device .data-table td:nth-child(2) {
+      width: 60px;
+    }
+
+    .mobile-device .data-table th:nth-child(3),
+    .mobile-device .data-table td:nth-child(3) {
+      width: 50px;
+    }
+
+    /* NAVBAR E FONTES AUMENTADAS NO MOBILE VERTICAL */
+    .mobile-device .navbar {
+      padding: 18px 20px; /* Aumentado para acomodar fontes maiores */
+      min-height: 75px; /* Aumentado para acomodar fontes maiores */
+    }
+
+    .mobile-device .navbar .welcome {
+      font-size: 24px; /* Aumentado */
+      font-weight: bold; /* Alterado de 600 para bold */
+    }
+
+    .mobile-device .navbar .links {
+      gap: 20px; /* Aumentado */
+    }
+
+    .mobile-device .navbar a {
+      font-size: 24px; /* Aumentado - mesmo tamanho do Bem-vindo */
+      font-weight: bold; /* Mesmo peso do Bem-vindo */
+    }
+
+    /* ESTILOS PARA MOBILE LANDSCAPE */
+    .mobile-landscape .charts-main-container,
+    .mobile-landscape .data-table-container {
+      width: 98%;
+      max-width: 1200px;
+    }
+
+    .mobile-landscape .charts-main-container {
+      flex-direction: row;
+      gap: 15px;
+    }
+
+    .mobile-landscape .main-chart-container {
+      flex: 1.8;
+    }
+
+    .mobile-landscape .side-charts-container {
+      flex: 1;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .mobile-landscape .side-chart {
+      width: 100%;
+    }
+
+    .mobile-landscape .side-chart h3 {
+      font-size: 16px; /* Aumentado */
+    }
+
+    .mobile-landscape .side-chart canvas {
+      height: 120px !important; /* Aumentado */
+    }
+
+    .mobile-landscape .chart-container {
+      height: 320px; /* Aumentado */
+    }
+
+    .mobile-landscape .main-chart-container canvas {
+      height: 300px !important; /* Aumentado */
+    }
+
+    /* CORREÇÃO: Garantir alinhamento perfeito da tabela em landscape */
+    .mobile-landscape .data-table-container {
+      padding: 0;
+    }
+
+    .mobile-landscape .data-table {
+      font-size: 11px; /* Aumentado */
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .mobile-landscape .data-table th,
+    .mobile-landscape .data-table td {
+      padding: 5px 3px; /* Aumentado */
+    }
+
+    .mobile-landscape .data-table th:nth-child(n+4),
+    .mobile-landscape .data-table td:nth-child(n+4) {
+      width: 40px;
+      min-width: 40px;
+      max-width: 40px;
+    }
+
+    .mobile-landscape .data-table th:nth-child(1),
+    .mobile-landscape .data-table td:nth-child(1) {
+      width: 60px;
+    }
+
+    .mobile-landscape .data-table th:nth-child(2),
+    .mobile-landscape .data-table td:nth-child(2) {
+      width: 50px;
+    }
+
+    .mobile-landscape .data-table th:nth-child(3),
+    .mobile-landscape .data-table td:nth-child(3) {
+      width: 45px;
+    }
+
+    .loading {
+      color: #666;
+      font-style: italic;
+    }
+
+    .error {
+      color: #ff0000;
+      background-color: #ffe6e6;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+
+    #deviceInfo {
+      display: none !important;
+    }
+
+    /* ESTILOS DO TOOLTIP PERSONALIZADO */
+    .custom-tooltip {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #164CAD;
+      border-radius: 8px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      pointer-events: none;
+      z-index: 100;
+      font-family: "Montserrat", sans-serif;
+      backdrop-filter: blur(5px);
+      transition: opacity 0.2s ease;
+      opacity: 0;
+    }
+
+    .custom-tooltip.visible {
+      opacity: 1;
+    }
+
+    .custom-tooltip::before {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-style: solid;
+    }
+
+    .custom-tooltip.top::before {
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 8px 0 8px;
+      border-color: #164CAD transparent transparent transparent;
+    }
+
+    .custom-tooltip.bottom::before {
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 8px 8px 8px;
+      border-color: transparent transparent #164CAD transparent;
+    }
+
+    .custom-tooltip.left::before {
+      right: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 8px 0 8px 8px;
+      border-color: transparent transparent transparent #164CAD;
+    }
+
+    .custom-tooltip.right::before {
+      left: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 8px 8px 8px 0;
+      border-color: transparent #164CAD transparent transparent;
+    }
+
+    .tooltip-header {
+      font-weight: 550;
+      color: #00000 ;
+      margin-bottom: 8px;
+      font-size: 14px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 4px;
+    }
+
+    .tooltip-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .tooltip-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .tooltip-label {
+      display: flex;
+      align-items: center;
+      color: #00000;
+    }
+
+    .tooltip-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      display: inline-block;
+    }
+
+    .tooltip-value {
+      font-weight: 400;
+      color: #00000;
+      margin-left: 12px;
+    }
+
+    /* Estilos para os botões de período */
+    .period-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .period-btn {
+      padding: 6px 12px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: "Montserrat", sans-serif;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .period-btn:hover {
+      background-color: #e0e0e0;
+    }
+
+    .period-btn.active {
+      background-color: #164CAD;
+      color: white;
+      border-color: #164CAD;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Gráfico do Ibovespa</h1>
-            <p class="subtitle">Dados em tempo real da planilha pública do Google Sheets</p>
-        </header>
-        
-        <div class="error" id="error-message">
-            <strong>Erro ao carregar dados:</strong> <span id="error-text"></span>
-        </div>
-        
-        <div class="loading" id="loading-indicator">
-            <div class="spinner"></div>
-            <p>Carregando dados da planilha...</p>
-        </div>
-        
-        <div class="ibovespa-info" id="ibovespa-info" style="display: none;">
-            <div class="info-card">
-                <h3>Último Valor</h3>
-                <div class="value" id="last-value">-</div>
-            </div>
-            <div class="info-card">
-                <h3>Variação (%)</h3>
-                <div class="value" id="variation">-</div>
-            </div>
-            <div class="info-card">
-                <h3>Data Atualização</h3>
-                <div class="value" id="update-date">-</div>
-            </div>
-            <div class="info-card">
-                <h3>Total de Registros</h3>
-                <div class="value" id="total-records">-</div>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <button id="btn-1m" class="active">1 Mês</button>
-            <button id="btn-3m">3 Meses</button>
-            <button id="btn-6m">6 Meses</button>
-            <button id="btn-1y">1 Ano</button>
-            <button id="btn-all">Todo Período</button>
-        </div>
-        
+  <div class="navbar">
+    <div class="welcome" id="welcomeUser">Gráfico do Ibovespa</div>
+    <div class="links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="lamina.html">Lâmina</a>
+      <a href="minha-area.html">Minha Área</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header-info">
+      <h1>Ibovespa - Dados Históricos</h1>
+      <div class="cnpj">Fonte: Planilha Pública Google Sheets</div>
+      <div class="subtitle" id="subtitle">Carregando dados...</div>
+    </div>
+    
+    <div class="charts-main-container">
+      <div class="main-chart-container">
         <div class="chart-container">
-            <canvas id="ibovespa-chart"></canvas>
+          <canvas id="ibovespaChart"></canvas>
+        </div>
+        <!-- Tooltip personalizado será inserido aqui via JavaScript -->
+        <div class="period-controls" id="periodControls" style="display: none;">
+          <button class="period-btn active" data-period="1m">1 Mês</button>
+          <button class="period-btn" data-period="3m">3 Meses</button>
+          <button class="period-btn" data-period="6m">6 Meses</button>
+          <button class="period-btn" data-period="1y">1 Ano</button>
+          <button class="period-btn" data-period="all">Todo Período</button>
+        </div>
+      </div>
+      
+      <div class="side-charts-container">
+        <div class="side-chart">
+          <h3>Variação Recente</h3>
+          <canvas id="variacaoChart"></canvas>
         </div>
         
-        <div class="data-info">
-            <h3>Últimos Registros da Planilha</h3>
-            <div class="table-container">
-                <table id="data-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Ibovespa (Pontos)</th>
-                            <th>Variação (%)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <!-- Dados serão preenchidos via JavaScript -->
-                    </tbody>
-                </table>
-            </div>
+        <div class="side-chart">
+          <h3>Últimos Valores</h3>
+          <canvas id="ultimosValoresChart"></canvas>
         </div>
-        
-        <footer>
-            <p>Dados obtidos da planilha pública do Google Sheets | Atualizado em <span id="current-date"></span></p>
-            <p>Este gráfico é apenas para fins demonstrativos e não constitui recomendação de investimento.</p>
-        </footer>
+      </div>
+    </div>
+    
+    <div class="data-table-container">
+      <div class="loading" id="tableLoading">Carregando tabela de dados...</div>
+      <table class="data-table" id="dataTable" style="display: none;">
+      </table>
     </div>
 
-    <script>
-        // URL da planilha pública do Google Sheets (formato CSV)
-        const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
+    <div id="deviceInfo"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script>
+    // URL da planilha pública do Google Sheets (Ibovespa)
+    const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
+    
+    // Variáveis globais
+    let ibovespaChart = null;
+    let variacaoChart = null;
+    let ultimosValoresChart = null;
+    let allIbovespaData = [];
+    let filteredData = [];
+    
+    // Tooltip personalizado
+    let customTooltip = null;
+
+    function createCustomTooltip() {
+      if (customTooltip) return customTooltip;
+      
+      customTooltip = document.createElement('div');
+      customTooltip.className = 'custom-tooltip';
+      document.querySelector('.main-chart-container').appendChild(customTooltip);
+      return customTooltip;
+    }
+
+    function showCustomTooltip(chart, tooltip) {
+      // Criar ou obter o tooltip personalizado
+      const tooltipEl = createCustomTooltip();
+      
+      // Esconder tooltip se não há dados
+      if (tooltip.opacity === 0) {
+        tooltipEl.classList.remove('visible');
+        return;
+      }
+
+      // Configurar conteúdo do tooltip
+      if (tooltip.body) {
+        const title = tooltip.title[0] || '';
+        const bodyLines = tooltip.body.map(b => b.lines);
         
-        // Variáveis globais
-        let ibovespaChart = null;
-        let allData = [];
-        let filteredData = [];
+        let tooltipHTML = `<div class="tooltip-header">${title}</div>`;
         
-        // Elementos do DOM
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const errorMessage = document.getElementById('error-message');
-        const errorText = document.getElementById('error-text');
-        const ibovespaInfo = document.getElementById('ibovespa-info');
-        const lastValueElement = document.getElementById('last-value');
-        const variationElement = document.getElementById('variation');
-        const updateDateElement = document.getElementById('update-date');
-        const totalRecordsElement = document.getElementById('total-records');
-        const tableBody = document.getElementById('table-body');
-        const currentDateElement = document.getElementById('current-date');
-        
-        // Configurar data atual no rodapé
-        const now = new Date();
-        currentDateElement.textContent = now.toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        // Adicionar dados de cada dataset
+        tooltip.dataPoints.forEach((dataPoint, index) => {
+          const dataset = chart.data.datasets[dataPoint.datasetIndex];
+          // Formatando o valor do Ibovespa
+          const value = typeof dataPoint.raw === 'object' ? 
+                       dataPoint.raw.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 
+                       dataPoint.raw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          
+          const label = dataset.label || 'Ibovespa';
+          const color = dataset.borderColor || '#164CAD';
+          
+          tooltipHTML += `
+            <div class="tooltip-item">
+              <span class="tooltip-label">
+                <span class="tooltip-color" style="background-color: ${color}"></span>
+                ${label}
+              </span>
+              <span class="tooltip-value">${value} pontos</span>
+            </div>
+          `;
         });
         
-        // Função para buscar dados da planilha
-        async function fetchSpreadsheetData() {
-            try {
-                console.log('Iniciando busca de dados...');
-                const response = await fetch(SPREADSHEET_URL);
-                
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP: ${response.status}`);
-                }
-                
-                const csvText = await response.text();
-                console.log('Dados CSV recebidos, processando...');
-                
-                // Processar os dados CSV
-                processCSVData(csvText);
-                
-            } catch (error) {
-                console.error('Erro ao buscar dados:', error);
-                showError(`Não foi possível carregar os dados da planilha. Detalhes: ${error.message}`);
-                
-                // Carregar dados de exemplo em caso de falha
-                loadSampleData();
-            }
+        tooltipEl.innerHTML = tooltipHTML;
+      }
+
+      // Posicionar o tooltip
+      const position = chart.canvas.getBoundingClientRect();
+      const chartContainer = document.querySelector('.main-chart-container');
+      const containerRect = chartContainer.getBoundingClientRect();
+      
+      // Posição relativa ao container do gráfico
+      let left = position.left + tooltip.caretX - containerRect.left;
+      let top = position.top + tooltip.caretY - containerRect.top;
+      
+      // Ajustar posição para não sair da tela
+      const tooltipWidth = tooltipEl.offsetWidth;
+      const tooltipHeight = tooltipEl.offsetHeight;
+      
+      // Definir posição padrão (acima do ponto)
+      let placement = 'top';
+      
+      // Verificar se precisa ajustar a posição
+      if (top - tooltipHeight - 10 < 0) {
+        placement = 'bottom';
+        top += 20;
+      } else {
+        top -= tooltipHeight + 10;
+      }
+      
+      // Ajustar horizontalmente para não sair da tela
+      if (left + tooltipWidth > containerRect.width) {
+        left = containerRect.width - tooltipWidth - 10;
+      } else if (left < 0) {
+        left = 10;
+      } else {
+        left -= tooltipWidth / 2;
+      }
+      
+      tooltipEl.style.left = left + 'px';
+      tooltipEl.style.top = top + 'px';
+      
+      // Atualizar classe de posicionamento
+      tooltipEl.className = `custom-tooltip ${placement} visible`;
+    }
+
+    // Função para buscar dados da planilha
+    async function loadIbovespaData() {
+      try {
+        console.log('Iniciando busca de dados do Ibovespa...');
+        document.getElementById('subtitle').textContent = 'Carregando dados da planilha...';
+        
+        const response = await fetch(SPREADSHEET_URL);
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
         }
         
-        // Função para processar dados CSV
-        function processCSVData(csvText) {
-            try {
-                // Dividir o CSV em linhas
-                const lines = csvText.split('\n');
-                
-                // Procurar pela seção "A. Pontos" - coluna A (Data) e coluna B (Ibovespa)
-                let startIndex = -1;
-                
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('A. Pontos') || lines[i].includes('Data') && lines[i].includes('Ibovespa')) {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                
-                // Se não encontrou pelo título, procura por linhas que contenham datas e números
-                if (startIndex === -1) {
-                    for (let i = 0; i < lines.length; i++) {
-                        if (lines[i].match(/\d{1,2}\/\d{1,2}\/\d{4}/) && lines[i].match(/\d+\.?\d*/)) {
-                            startIndex = i;
-                            break;
-                        }
-                    }
-                }
-                
-                // Se ainda não encontrou, usa a partir da segunda linha (supondo que a primeira é cabeçalho)
-                if (startIndex === -1) {
-                    startIndex = 1;
-                }
-                
-                console.log(`Iniciando processamento a partir da linha ${startIndex + 1}`);
-                
-                // Processar as linhas de dados
-                allData = [];
-                
-                for (let i = startIndex; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    
-                    // Ignorar linhas vazias ou que não contenham dados relevantes
-                    if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) {
-                        continue;
-                    }
-                    
-                    // Dividir a linha por vírgulas (cuidado com vírgulas dentro de aspas)
-                    let columns;
-                    
-                    // Tentar dividir por vírgula simples
-                    if (line.includes('"')) {
-                        // Processamento mais complexo para células com aspas
-                        columns = parseCSVLine(line);
-                    } else {
-                        columns = line.split(',');
-                    }
-                    
-                    // Verificar se temos pelo menos duas colunas (Data e Ibovespa)
-                    if (columns.length >= 2) {
-                        const dateStr = columns[0].trim().replace(/"/g, '');
-                        const valueStr = columns[1].trim().replace(/"/g, '');
-                        
-                        // Validar e converter a data
-                        let date;
-                        try {
-                            // Tentar diferentes formatos de data
-                            if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
-                                // Formato DD/MM/YYYY
-                                const parts = dateStr.split('/');
-                                date = new Date(parts[2], parts[1] - 1, parts[0]);
-                            } else if (dateStr.match(/\d{4}-\d{1,2}-\d{1,2}/)) {
-                                // Formato YYYY-MM-DD
-                                date = new Date(dateStr);
-                            } else {
-                                // Tentar parse direto
-                                date = new Date(dateStr);
-                            }
-                            
-                            // Validar a data
-                            if (isNaN(date.getTime())) {
-                                console.warn(`Data inválida na linha ${i + 1}: ${dateStr}`);
-                                continue;
-                            }
-                        } catch (e) {
-                            console.warn(`Erro ao processar data na linha ${i + 1}: ${dateStr}`, e);
-                            continue;
-                        }
-                        
-                        // Validar e converter o valor do Ibovespa
-                        const value = parseFloat(valueStr.replace(/\./g, '').replace(',', '.'));
-                        
-                        if (isNaN(value) || value <= 0) {
-                            console.warn(`Valor inválido na linha ${i + 1}: ${valueStr}`);
-                            continue;
-                        }
-                        
-                        // Adicionar aos dados
-                        allData.push({
-                            date: date,
-                            dateStr: dateStr,
-                            value: value
-                        });
-                    }
-                }
-                
-                console.log(`Processados ${allData.length} registros válidos.`);
-                
-                if (allData.length === 0) {
-                    throw new Error('Nenhum dado válido encontrado na planilha.');
-                }
-                
-                // Ordenar por data (do mais antigo para o mais recente)
-                allData.sort((a, b) => a.date - b.date);
-                
-                // Calcular variações percentuais
-                calculateVariations();
-                
-                // Mostrar informações resumidas
-                updateSummaryInfo();
-                
-                // Atualizar tabela
-                updateTable();
-                
-                // Inicializar com filtro de 1 mês
-                filterDataByMonths(1);
-                
-                // Ocultar indicador de carregamento e mostrar dados
-                loadingIndicator.style.display = 'none';
-                ibovespaInfo.style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Erro ao processar dados CSV:', error);
-                showError(`Erro ao processar os dados da planilha. ${error.message}`);
-                
-                // Carregar dados de exemplo em caso de falha
-                loadSampleData();
-            }
+        const csvText = await response.text();
+        console.log('Dados CSV recebidos, processando...');
+        
+        // Processar os dados CSV
+        processCSVData(csvText);
+        
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        document.getElementById('subtitle').textContent = 'Erro ao carregar dados da planilha';
+        document.getElementById('tableLoading').textContent = `Erro: ${error.message}`;
+        document.getElementById('tableLoading').className = "error";
+        
+        // Carregar dados de exemplo em caso de falha
+        loadSampleData();
+      }
+    }
+
+    // Função para processar dados CSV
+    function processCSVData(csvText) {
+      try {
+        // Dividir o CSV em linhas
+        const lines = csvText.split('\n');
+        
+        // Processar as linhas de dados
+        allIbovespaData = [];
+        
+        // Procurar pela seção "A. Pontos" - coluna A (Data) e coluna B (Ibovespa)
+        let startIndex = -1;
+        
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
+            startIndex = i;
+            break;
+          }
         }
         
-        // Função auxiliar para processar linha CSV com aspas
-        function parseCSVLine(line) {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
+        // Se não encontrou pelo título, procura por linhas que contenham datas e números
+        if (startIndex === -1) {
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].match(/\d{1,2}\/\d{1,2}\/\d{4}/) && lines[i].match(/\d+\.?\d*/)) {
+              startIndex = i;
+              break;
+            }
+          }
+        }
+        
+        // Se ainda não encontrou, usa a partir da segunda linha (supondo que a primeira é cabeçalho)
+        if (startIndex === -1) {
+          startIndex = 1;
+        }
+        
+        console.log(`Iniciando processamento a partir da linha ${startIndex + 1}`);
+        
+        for (let i = startIndex; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          // Ignorar linhas vazias ou que não contenham dados relevantes
+          if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) {
+            continue;
+          }
+          
+          // Dividir a linha por vírgulas
+          let columns;
+          
+          // Tentar dividir por vírgula simples
+          if (line.includes('"')) {
+            // Processamento mais complexo para células com aspas
+            columns = parseCSVLine(line);
+          } else {
+            columns = line.split(',');
+          }
+          
+          // Verificar se temos pelo menos duas colunas (Data e Ibovespa)
+          if (columns.length >= 2) {
+            const dateStr = columns[0].trim().replace(/"/g, '');
+            const valueStr = columns[1].trim().replace(/"/g, '');
             
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current);
-                    current = '';
-                } else {
-                    current += char;
-                }
+            // Validar e converter a data
+            let date;
+            try {
+              // Tentar diferentes formatos de data
+              if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+                // Formato DD/MM/YYYY
+                const parts = dateStr.split('/');
+                date = new Date(parts[2], parts[1] - 1, parts[0]);
+              } else if (dateStr.match(/\d{4}-\d{1,2}-\d{1,2}/)) {
+                // Formato YYYY-MM-DD
+                date = new Date(dateStr);
+              } else {
+                // Tentar parse direto
+                date = new Date(dateStr);
+              }
+              
+              // Validar a data
+              if (isNaN(date.getTime())) {
+                console.warn(`Data inválida na linha ${i + 1}: ${dateStr}`);
+                continue;
+              }
+            } catch (e) {
+              console.warn(`Erro ao processar data na linha ${i + 1}: ${dateStr}`, e);
+              continue;
             }
             
-            result.push(current);
-            return result;
+            // Validar e converter o valor do Ibovespa
+            // Remover pontos de milhar e converter vírgula para ponto
+            const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
+            const value = parseFloat(cleanedValue);
+            
+            if (isNaN(value) || value <= 0) {
+              console.warn(`Valor inválido na linha ${i + 1}: ${valueStr}`);
+              continue;
+            }
+            
+            // Adicionar aos dados
+            allIbovespaData.push({
+              date: date,
+              dateStr: dateStr,
+              value: value,
+              formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            });
+          }
         }
+        
+        console.log(`Processados ${allIbovespaData.length} registros válidos.`);
+        
+        if (allIbovespaData.length === 0) {
+          throw new Error('Nenhum dado válido encontrado na planilha.');
+        }
+        
+        // Ordenar por data (do mais antigo para o mais recente)
+        allIbovespaData.sort((a, b) => a.date - b.date);
         
         // Calcular variações percentuais
-        function calculateVariations() {
-            for (let i = 1; i < allData.length; i++) {
-                const previousValue = allData[i-1].value;
-                const currentValue = allData[i].value;
-                const variation = ((currentValue - previousValue) / previousValue) * 100;
-                allData[i].variation = variation;
-            }
-            
-            // Para o primeiro item, não há variação
-            if (allData.length > 0) {
-                allData[0].variation = 0;
-            }
-        }
+        calculateVariations();
         
-        // Atualizar informações resumidas
-        function updateSummaryInfo() {
-            if (allData.length === 0) return;
-            
-            const lastRecord = allData[allData.length - 1];
-            const firstRecord = allData[0];
-            
-            // Último valor
-            lastValueElement.textContent = formatNumber(lastRecord.value);
-            
-            // Variação total
-            const totalVariation = ((lastRecord.value - firstRecord.value) / firstRecord.value) * 100;
-            variationElement.textContent = `${totalVariation >= 0 ? '+' : ''}${totalVariation.toFixed(2)}%`;
-            variationElement.className = `value ${totalVariation >= 0 ? 'positive' : 'negative'}`;
-            
-            // Data da última atualização
-            updateDateElement.textContent = formatDate(lastRecord.date);
-            
-            // Total de registros
-            totalRecordsElement.textContent = allData.length;
-        }
+        // Atualizar subtítulo com a última data
+        const lastRecord = allIbovespaData[allIbovespaData.length - 1];
+        document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
         
-        // Atualizar tabela com os últimos registros
-        function updateTable() {
-            // Limpar tabela
-            tableBody.innerHTML = '';
-            
-            // Pegar os últimos 10 registros (do mais recente para o mais antigo)
-            const recentData = [...allData].reverse().slice(0, 10);
-            
-            // Adicionar linhas à tabela
-            recentData.forEach(record => {
-                const row = document.createElement('tr');
-                
-                const dateCell = document.createElement('td');
-                dateCell.textContent = record.dateStr;
-                
-                const valueCell = document.createElement('td');
-                valueCell.textContent = formatNumber(record.value);
-                
-                const variationCell = document.createElement('td');
-                const variation = record.variation || 0;
-                variationCell.textContent = `${variation >= 0 ? '+' : ''}${variation.toFixed(2)}%`;
-                variationCell.style.color = variation >= 0 ? '#27ae60' : '#e74c3c';
-                
-                row.appendChild(dateCell);
-                row.appendChild(valueCell);
-                row.appendChild(variationCell);
-                
-                tableBody.appendChild(row);
-            });
-        }
+        // Mostrar controles de período
+        document.getElementById('periodControls').style.display = 'flex';
         
-        // Filtrar dados por número de meses
-        function filterDataByMonths(months) {
-            if (allData.length === 0) return;
-            
-            const cutoffDate = new Date();
-            cutoffDate.setMonth(cutoffDate.getMonth() - months);
-            
-            filteredData = allData.filter(record => record.date >= cutoffDate);
-            
-            // Se não houver dados no período filtrado, usar todos os dados
-            if (filteredData.length === 0) {
-                filteredData = [...allData];
-            }
-            
-            // Atualizar gráfico
-            updateChart();
-        }
+        // Criar gráfico principal
+        createMainChart();
         
-        // Atualizar gráfico com dados filtrados
-        function updateChart() {
-            if (filteredData.length === 0) return;
-            
-            const ctx = document.getElementById('ibovespa-chart').getContext('2d');
-            
-            // Preparar dados para o gráfico
-            const labels = filteredData.map(record => formatDate(record.date));
-            const values = filteredData.map(record => record.value);
-            
-            // Configurar cores baseadas na tendência
-            const lineColor = values[values.length - 1] >= values[0] ? '#27ae60' : '#e74c3c';
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, lineColor + '40');
-            gradient.addColorStop(1, lineColor + '05');
-            
-            // Se já existe um gráfico, destruir antes de criar um novo
-            if (ibovespaChart) {
-                ibovespaChart.destroy();
-            }
-            
-            // Criar novo gráfico
-            ibovespaChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Ibovespa (Pontos)',
-                        data: values,
-                        borderColor: lineColor,
-                        backgroundColor: gradient,
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 2,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 14
-                                },
-                                color: '#2c3e50'
-                            }
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: 'rgba(44, 62, 80, 0.9)',
-                            titleFont: {
-                                size: 14
-                            },
-                            bodyFont: {
-                                size: 14
-                            },
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += formatNumber(context.parsed.y);
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#7f8c8d',
-                                maxTicksLimit: 10
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#7f8c8d',
-                                callback: function(value) {
-                                    return formatNumber(value);
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'nearest'
-                    }
+        // Criar gráficos laterais
+        createSideCharts();
+        
+        // Atualizar tabela
+        updateTable();
+        
+        // Inicializar com filtro de 1 mês
+        filterDataByMonths(1);
+        
+        // Configurar eventos dos botões
+        setupPeriodButtons();
+        
+      } catch (error) {
+        console.error('Erro ao processar dados CSV:', error);
+        document.getElementById('subtitle').textContent = 'Erro ao processar dados da planilha';
+        document.getElementById('tableLoading').textContent = `Erro: ${error.message}`;
+        document.getElementById('tableLoading').className = "error";
+        
+        // Carregar dados de exemplo em caso de falha
+        loadSampleData();
+      }
+    }
+    
+    // Função auxiliar para processar linha CSV com aspas
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      result.push(current);
+      return result;
+    }
+    
+    // Calcular variações percentuais
+    function calculateVariations() {
+      for (let i = 1; i < allIbovespaData.length; i++) {
+        const previousValue = allIbovespaData[i-1].value;
+        const currentValue = allIbovespaData[i].value;
+        const variation = ((currentValue - previousValue) / previousValue) * 100;
+        allIbovespaData[i].variation = variation;
+      }
+      
+      // Para o primeiro item, não há variação
+      if (allIbovespaData.length > 0) {
+        allIbovespaData[0].variation = 0;
+      }
+    }
+    
+    // Criar gráfico principal do Ibovespa
+    function createMainChart() {
+      if (allIbovespaData.length === 0) return;
+      
+      const canvas = document.getElementById('ibovespaChart');
+      const ctx = canvas.getContext('2d');
+      
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const isMobileVertical = document.body.classList.contains('mobile-device') && 
+                          !document.body.classList.contains('mobile-landscape');
+      
+      // Aumentar significativamente as fontes no mobile vertical
+      const axisFontSize = isMobileVertical ? 22 : 15;
+      const legendFontSize = isMobileVertical ? 20 : 12;
+      
+      const createGradient = (ctx, chartArea) => {
+        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        gradient.addColorStop(0, "#F6F8FC");
+        gradient.addColorStop(0.5, "#8EA8D7");
+        gradient.addColorStop(1, "#164CAD");
+        return gradient;
+      };
+      
+      // Preparar dados para o gráfico (usando todos os dados inicialmente)
+      const chartData = allIbovespaData.map(item => ({
+        x: item.date,
+        y: item.value
+      }));
+      
+      ibovespaChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          datasets: [
+            {
+              label: "Ibovespa",
+              data: chartData,
+              borderColor: "#164CAD",
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.15,
+              fill: true,
+              backgroundColor: function(context) {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) {
+                  return null;
                 }
-            });
-        }
-        
-        // Formatar número com separadores de milhar
-        function formatNumber(num) {
-            return num.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
-        
-        // Formatar data para exibição
-        function formatDate(date) {
-            return date.toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
-        }
-        
-        // Mostrar mensagem de erro
-        function showError(message) {
-            errorText.textContent = message;
-            errorMessage.style.display = 'block';
-            loadingIndicator.style.display = 'none';
-        }
-        
-        // Carregar dados de exemplo (em caso de falha na requisição)
-        function loadSampleData() {
-            console.log('Carregando dados de exemplo...');
-            
-            // Gerar dados de exemplo para demonstração
-            allData = [];
-            const startDate = new Date(2023, 0, 1); // 1º de janeiro de 2023
-            const baseValue = 100000;
-            
-            for (let i = 0; i < 365; i++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + i);
-                
-                // Valor com variação aleatória
-                const randomChange = (Math.random() - 0.5) * 0.03; // Variação de -1.5% a +1.5%
-                const value = i === 0 ? baseValue : allData[i-1].value * (1 + randomChange);
-                
-                allData.push({
-                    date: currentDate,
-                    dateStr: formatDate(currentDate),
-                    value: value
-                });
+                return createGradient(ctx, chartArea);
+              },
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index',
+          },
+          plugins: {
+            legend: {
+              position: "top",
+              labels: {
+                usePointStyle: true,
+                pointStyle: "circle",
+                color: "#000000",
+                font: {
+                  family: "Montserrat",
+                  size: legendFontSize,
+                  weight: "300",
+                },
+              },
+            },
+            tooltip: {
+              enabled: false, // Desabilitar tooltip padrão
+              external: (context) => {
+                // Tooltip externo personalizado
+                showCustomTooltip(context.chart, context.tooltip);
+              }
+            },
+          },
+          scales: {
+            x: {
+              type: "time",
+              time: {
+                unit: "month",
+                displayFormats: { 
+                  month: "MMM - yy" 
+                },
+                tooltipFormat: "dd/MM/yyyy"
+              },
+              ticks: {
+                color: "#000000",
+                maxRotation: 45,
+                minRotation: 45,
+                font: {
+                  family: "Montserrat",
+                  size: axisFontSize,
+                  weight: "300",
+                },
+                // Mapear meses para português
+                callback: function(value, index, values) {
+                  const date = new Date(value);
+                  const month = date.getMonth();
+                  const year = date.getFullYear().toString().slice(-2);
+                  
+                  const mesesPortugues = [
+                    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+                    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+                  ];
+                  
+                  return `${mesesPortugues[month]} - ${year}`;
+                }
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+            },
+            y: {
+              ticks: {
+                color: "#000000",
+                font: {
+                  family: "Montserrat",
+                  size: axisFontSize,
+                  weight: "300",
+                },
+                callback: (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+            },
+          },
+        },
+      });
+      
+      console.log("Gráfico principal do Ibovespa criado com sucesso");
+    }
+    
+    // Criar gráficos laterais
+    function createSideCharts() {
+      if (allIbovespaData.length === 0) return;
+      
+      // Gráfico de variação recente (últimos 30 dias)
+      createVariacaoChart();
+      
+      // Gráfico dos últimos valores
+      createUltimosValoresChart();
+    }
+    
+    // Criar gráfico de variação
+    function createVariacaoChart() {
+      const canvas = document.getElementById('variacaoChart');
+      const ctx = canvas.getContext('2d');
+      
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      // Pegar os últimos 30 registros
+      const recentData = allIbovespaData.slice(-30);
+      const variations = recentData.map(item => item.variation || 0);
+      
+      // Calcular cores baseadas na variação
+      const colors = variations.map(v => v >= 0 ? '#27ae60' : '#e74c3c');
+      
+      const isMobileVertical = document.body.classList.contains('mobile-device') && 
+                          !document.body.classList.contains('mobile-landscape');
+      
+      const axisFontSize = isMobileVertical ? 16 : 11;
+      
+      variacaoChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: variations.map((v, i) => i + 1),
+          datasets: [{
+            data: variations,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 0,
+            borderRadius: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `Variação: ${context.raw.toFixed(2)}%`;
+                }
+              }
             }
-            
-            // Calcular variações
-            calculateVariations();
-            
-            // Atualizar informações
-            updateSummaryInfo();
-            updateTable();
-            
-            // Inicializar com filtro de 1 mês
-            filterDataByMonths(1);
-            
-            // Ocultar indicador de carregamento e mostrar dados
-            loadingIndicator.style.display = 'none';
-            ibovespaInfo.style.display = 'flex';
-            
-            // Mostrar aviso que são dados de exemplo
-            showError('Dados de exemplo carregados (não foi possível acessar a planilha online).');
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              ticks: {
+                color: '#000',
+                font: {
+                  family: 'Montserrat',
+                  size: axisFontSize,
+                  weight: '300'
+                },
+                callback: (v) => `${v.toFixed(1)}%`
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+            }
+          }
         }
-        
-        // Configurar eventos dos botões de filtro
-        function setupEventListeners() {
-            document.getElementById('btn-1m').addEventListener('click', function() {
-                setActiveButton(this);
-                filterDataByMonths(1);
-            });
-            
-            document.getElementById('btn-3m').addEventListener('click', function() {
-                setActiveButton(this);
-                filterDataByMonths(3);
-            });
-            
-            document.getElementById('btn-6m').addEventListener('click', function() {
-                setActiveButton(this);
-                filterDataByMonths(6);
-            });
-            
-            document.getElementById('btn-1y').addEventListener('click', function() {
-                setActiveButton(this);
-                filterDataByMonths(12);
-            });
-            
-            document.getElementById('btn-all').addEventListener('click', function() {
-                setActiveButton(this);
-                filteredData = [...allData];
-                updateChart();
-            });
+      });
+    }
+    
+    // Criar gráfico dos últimos valores
+    function createUltimosValoresChart() {
+      const canvas = document.getElementById('ultimosValoresChart');
+      const ctx = canvas.getContext('2d');
+      
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      // Pegar os últimos 10 registros
+      const lastValues = allIbovespaData.slice(-10);
+      const values = lastValues.map(item => item.value);
+      const dates = lastValues.map(item => {
+        const date = new Date(item.date);
+        return `${date.getDate()}/${date.getMonth() + 1}`;
+      });
+      
+      const isMobileVertical = document.body.classList.contains('mobile-device') && 
+                          !document.body.classList.contains('mobile-landscape');
+      
+      const axisFontSize = isMobileVertical ? 16 : 11;
+      
+      ultimosValoresChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [{
+            data: values,
+            borderColor: "#164CAD",
+            borderWidth: 2,
+            pointRadius: 2,
+            pointBackgroundColor: "#164CAD",
+            fill: false,
+            tension: 0.1,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `Ibovespa: ${context.raw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#000',
+                font: {
+                  family: 'Montserrat',
+                  size: axisFontSize,
+                  weight: '300'
+                },
+                maxRotation: 0
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+            },
+            y: {
+              ticks: {
+                color: '#000',
+                font: {
+                  family: 'Montserrat',
+                  size: axisFontSize,
+                  weight: '300'
+                },
+                callback: (v) => (v/1000).toFixed(0) + 'k'
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+            }
+          }
         }
-        
-        // Definir botão ativo
-        function setActiveButton(activeButton) {
-            // Remover classe 'active' de todos os botões
-            const buttons = document.querySelectorAll('.controls button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Adicionar classe 'active' ao botão clicado
-            activeButton.classList.add('active');
+      });
+    }
+    
+    // Atualizar tabela com os dados
+    function updateTable() {
+      if (allIbovespaData.length === 0) return;
+      
+      const table = document.getElementById("dataTable");
+      const tableLoading = document.getElementById("tableLoading");
+      
+      table.innerHTML = "";
+      
+      // Criar cabeçalho da tabela
+      const headerRow = document.createElement("tr");
+      headerRow.className = "header-row";
+      
+      const headers = ["Data", "Ibovespa (pontos)", "Variação (%)"];
+      headers.forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        if (header === "Data") {
+          th.className = "column-w";
         }
+        headerRow.appendChild(th);
+      });
+      
+      table.appendChild(headerRow);
+      
+      // Adicionar dados (últimos 20 registros, do mais recente para o mais antigo)
+      const recentData = [...allIbovespaData].reverse().slice(0, 20);
+      
+      recentData.forEach(item => {
+        const row = document.createElement("tr");
         
-        // Inicializar aplicação
-        function init() {
-            console.log('Inicializando aplicação...');
-            setupEventListeners();
-            fetchSpreadsheetData();
+        // Data
+        const dateCell = document.createElement("td");
+        dateCell.textContent = item.dateStr;
+        row.appendChild(dateCell);
+        
+        // Valor do Ibovespa
+        const valueCell = document.createElement("td");
+        valueCell.textContent = item.formattedValue;
+        row.appendChild(valueCell);
+        
+        // Variação
+        const variationCell = document.createElement("td");
+        const variation = item.variation || 0;
+        variationCell.textContent = variation.toFixed(2) + "%";
+        variationCell.style.color = variation >= 0 ? "#27ae60" : "#e74c3c";
+        variationCell.style.fontWeight = "bold";
+        row.appendChild(variationCell);
+        
+        table.appendChild(row);
+      });
+      
+      table.style.display = "table";
+      tableLoading.style.display = "none";
+    }
+    
+    // Filtrar dados por número de meses
+    function filterDataByMonths(months) {
+      if (allIbovespaData.length === 0) return;
+      
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - months);
+      
+      filteredData = allIbovespaData.filter(record => record.date >= cutoffDate);
+      
+      // Se não houver dados no período filtrado, usar todos os dados
+      if (filteredData.length === 0) {
+        filteredData = [...allIbovespaData];
+      }
+      
+      // Atualizar gráfico
+      updateMainChartData();
+    }
+    
+    // Atualizar dados do gráfico principal
+    function updateMainChartData() {
+      if (!ibovespaChart || filteredData.length === 0) return;
+      
+      // Atualizar dados do gráfico
+      ibovespaChart.data.datasets[0].data = filteredData.map(item => ({
+        x: item.date,
+        y: item.value
+      }));
+      
+      // Atualizar o gráfico
+      ibovespaChart.update();
+    }
+    
+    // Configurar eventos dos botões de período
+    function setupPeriodButtons() {
+      const buttons = document.querySelectorAll('.period-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          // Remover classe 'active' de todos os botões
+          buttons.forEach(b => b.classList.remove('active'));
+          
+          // Adicionar classe 'active' ao botão clicado
+          this.classList.add('active');
+          
+          // Filtrar dados de acordo com o período selecionado
+          const period = this.getAttribute('data-period');
+          
+          switch(period) {
+            case '1m':
+              filterDataByMonths(1);
+              break;
+            case '3m':
+              filterDataByMonths(3);
+              break;
+            case '6m':
+              filterDataByMonths(6);
+              break;
+            case '1y':
+              filterDataByMonths(12);
+              break;
+            case 'all':
+              filteredData = [...allIbovespaData];
+              updateMainChartData();
+              break;
+          }
+        });
+      });
+    }
+    
+    // Carregar dados de exemplo (em caso de falha na requisição)
+    function loadSampleData() {
+      console.log('Carregando dados de exemplo...');
+      
+      // Gerar dados de exemplo para demonstração
+      allIbovespaData = [];
+      const startDate = new Date(2023, 0, 1);
+      const baseValue = 100000;
+      
+      for (let i = 0; i < 365; i++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + i);
+        
+        // Valor com variação aleatória
+        const randomChange = (Math.random() - 0.5) * 0.03;
+        const value = i === 0 ? baseValue : allIbovespaData[i-1].value * (1 + randomChange);
+        
+        allIbovespaData.push({
+          date: currentDate,
+          dateStr: formatDate(currentDate),
+          value: value,
+          formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        });
+      }
+      
+      // Calcular variações
+      calculateVariations();
+      
+      // Atualizar subtítulo
+      const lastRecord = allIbovespaData[allIbovespaData.length - 1];
+      document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
+      
+      // Mostrar controles de período
+      document.getElementById('periodControls').style.display = 'flex';
+      
+      // Criar gráficos
+      createMainChart();
+      createSideCharts();
+      updateTable();
+      
+      // Inicializar com filtro de 1 mês
+      filterDataByMonths(1);
+      
+      // Configurar eventos dos botões
+      setupPeriodButtons();
+      
+      // Mostrar aviso que são dados de exemplo
+      document.getElementById('tableLoading').textContent = 'Dados de exemplo carregados (não foi possível acessar a planilha online).';
+      document.getElementById('tableLoading').className = "error";
+    }
+    
+    // Função auxiliar para formatar data
+    function formatDate(date) {
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    
+    // Detecção de dispositivo
+    let orientationChangeTimeout;
+    
+    function detectarDispositivo() {
+      const largura = window.innerWidth;
+      const altura = window.innerHeight;
+      const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      
+      const isMobileSize = largura <= 1024 || 
+                          (largura < altura && largura <= 768) ||
+                          (isTouchDevice && (largura <= 1024 || altura <= 1024));
+      
+      const isNowMobileLandscape = isMobileSize && isTouchDevice && largura > altura;
+      
+      document.body.classList.remove('desktop-device', 'mobile-device', 'mobile-landscape');
+      
+      if (isMobileSize && isTouchDevice) {
+        if (largura > altura) {
+          document.body.classList.add('mobile-device', 'mobile-landscape');
+        } else {
+          document.body.classList.add('mobile-device');
         }
-        
-        // Iniciar quando o DOM estiver carregado
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+      } else {
+        document.body.classList.add('desktop-device');
+      }
+      
+      // Redesenhar gráficos sempre que mudar o dispositivo para aplicar as novas fontes
+      setTimeout(redesenharGraficosSuave, 100);
+    }
+    
+    function ajustarAlinhamentoTabela() {
+      const chartsContainer = document.querySelector('.charts-main-container');
+      const tableContainer = document.querySelector('.data-table-container');
+      
+      if (chartsContainer && tableContainer) {
+        // Forçar a mesma largura
+        const chartsWidth = chartsContainer.offsetWidth;
+        tableContainer.style.width = chartsWidth + 'px';
+      }
+    }
+    
+    function redesenharGraficosSuave() {
+      // Redesenhar gráficos se existirem
+      if (ibovespaChart || variacaoChart || ultimosValoresChart) {
+        setTimeout(() => {
+          const event = new Event('resize');
+          window.dispatchEvent(event);
+        }, 100);
+      }
+      
+      // Ajustar alinhamento da tabela
+      setTimeout(ajustarAlinhamentoTabela, 50);
+    }
+    
+    // Inicializar aplicação
+    function init() {
+      console.log('Inicializando aplicação do Ibovespa...');
+      
+      // Configurar eventos de redimensionamento
+      window.addEventListener('resize', function() {
+        clearTimeout(orientationChangeTimeout);
+        orientationChangeTimeout = setTimeout(detectarDispositivo, 250);
+      });
+      
+      window.addEventListener('orientationchange', function() {
+        clearTimeout(orientationChangeTimeout);
+        orientationChangeTimeout = setTimeout(detectarDispositivo, 500);
+      });
+      
+      // Detectar dispositivo inicialmente
+      setTimeout(detectarDispositivo, 100);
+      detectarDispositivo();
+      
+      // Carregar dados do Ibovespa
+      loadIbovespaData();
+    }
+    
+    // Iniciar quando o DOM estiver carregado
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
 </html>
