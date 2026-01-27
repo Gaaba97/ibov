@@ -21,14 +21,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start; /* Alterado de center para flex-start */
     }
 
     .header-info {
       width: 95%;
       max-width: 1200px;
       text-align: center;
-      margin-bottom: 20px;
+      margin: 40px 0 20px 0; /* Adicionado margin-top de 40px */
       flex-shrink: 0;
     }
 
@@ -47,7 +47,7 @@
     .chart-main-container {
       width: 95%;
       max-width: 1200px;
-      height: 70vh;
+      height: 55vh; /* Reduzido de 70vh para 55vh */
       flex-grow: 1;
       display: flex;
       flex-direction: column;
@@ -253,6 +253,7 @@
     let ibovespaChart = null;
     let allIbovespaData = [];
     let filteredData = [];
+    let percentData = []; // Dados em percentual
     
     // Tooltip personalizado
     let customTooltip = null;
@@ -285,10 +286,11 @@
         // Adicionar dados de cada dataset
         tooltip.dataPoints.forEach((dataPoint, index) => {
           const dataset = chart.data.datasets[dataPoint.datasetIndex];
-          // Formatando o valor do Ibovespa
-          const value = typeof dataPoint.raw === 'object' ? 
-                       dataPoint.raw.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 
-                       dataPoint.raw.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          
+          // Encontrar o valor original correspondente
+          const pointIndex = dataPoint.dataIndex;
+          const originalValue = filteredData[pointIndex]?.value || 0;
+          const percentValue = dataPoint.raw.y;
           
           const label = dataset.label || 'Ibovespa';
           const color = dataset.borderColor || '#164CAD';
@@ -299,7 +301,16 @@
                 <span class="tooltip-color" style="background-color: ${color}"></span>
                 ${label}
               </span>
-              <span class="tooltip-value">${value} pontos</span>
+            </div>
+            <div class="tooltip-item">
+              <span class="tooltip-label">Variação:</span>
+              <span class="tooltip-value" style="color: ${percentValue >= 0 ? '#008000' : '#ff0000'};">
+                ${percentValue >= 0 ? '+' : ''}${percentValue.toFixed(2)}%
+              </span>
+            </div>
+            <div class="tooltip-item">
+              <span class="tooltip-label">Valor:</span>
+              <span class="tooltip-value">${originalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pontos</span>
             </div>
           `;
         });
@@ -542,6 +553,26 @@
       return result;
     }
     
+    // Função para converter dados originais em percentual
+    function convertToPercentageData(originalData) {
+      if (!originalData || originalData.length === 0) return [];
+      
+      const firstValue = originalData[0].value;
+      const percentageData = [];
+      
+      for (let i = 0; i < originalData.length; i++) {
+        const item = originalData[i];
+        const percentage = ((item.value / firstValue) - 1) * 100;
+        
+        percentageData.push({
+          x: item.date,
+          y: percentage
+        });
+      }
+      
+      return percentageData;
+    }
+    
     // Criar gráfico principal do Ibovespa
     function createMainChart() {
       if (allIbovespaData.length === 0) return;
@@ -563,11 +594,8 @@
         return gradient;
       };
       
-      // Preparar dados para o gráfico (usando todos os dados inicialmente)
-      const chartData = allIbovespaData.map(item => ({
-        x: item.date,
-        y: item.value
-      }));
+      // Preparar dados iniciais (todos os dados)
+      const initialData = convertToPercentageData(allIbovespaData);
       
       ibovespaChart = new Chart(ctx, {
         type: "line",
@@ -575,7 +603,7 @@
           datasets: [
             {
               label: "Ibovespa",
-              data: chartData,
+              data: initialData,
               borderColor: "#164CAD",
               borderWidth: 1.5,
               pointRadius: 0,
@@ -664,9 +692,19 @@
                   size: 12,
                   weight: "300",
                 },
-                callback: (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+                callback: (v) => `${v.toFixed(1)}%`, // Formatando como porcentagem
               },
               grid: { color: "rgba(0,0,0,0.05)" },
+              title: {
+                display: true,
+                text: 'Variação Percentual (%)',
+                color: "#000000",
+                font: {
+                  family: "Montserrat",
+                  size: 12,
+                  weight: "300",
+                }
+              }
             },
           },
         },
@@ -697,11 +735,11 @@
     function updateMainChartData() {
       if (!ibovespaChart || filteredData.length === 0) return;
       
+      // Converter dados filtrados para percentual
+      const percentageData = convertToPercentageData(filteredData);
+      
       // Atualizar dados do gráfico
-      ibovespaChart.data.datasets[0].data = filteredData.map(item => ({
-        x: item.date,
-        y: item.value
-      }));
+      ibovespaChart.data.datasets[0].data = percentageData;
       
       // Atualizar o gráfico
       ibovespaChart.update();
