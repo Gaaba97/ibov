@@ -685,7 +685,7 @@
         
         // CORREÇÃO: Agora só mostra erro se for MENOR (não menor ou igual) a 30/12/2024
         if (selectedDate < minAllowedDate) {
-          startDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+          startDateError.textContent = `Menor data disponível 30/12/2024`;
           startDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
@@ -707,7 +707,7 @@
         
         // CORREÇÃO: Agora só mostra erro se for MENOR (não menor ou igual) a 30/12/2024
         if (selectedDate < minAllowedDate) {
-          endDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+          endDateError.textContent = `Menor data disponível 30/12/2024`;
           endDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
