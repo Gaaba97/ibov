@@ -280,7 +280,7 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      margin-right = 8px;
+      margin-right: 8px;
       display: inline-block;
     }
 
@@ -1093,13 +1093,14 @@
         return;
       }
       
-      // AJUSTE: Pegar dados a partir do dia seguinte ao início do período (ignorar o primeiro dia)
-      const tableData = filteredData.slice(1);
+      // CORREÇÃO: 
+      // 1. Para o denominador (variação do Ibovespa): (valor do último dia) - (valor do primeiro dia)
+      // 2. Para o numerador (soma das empresas): começar do dia seguinte ao primeiro dia
       
-      // Calcular a variação do Ibovespa no período (a partir do segundo dia)
-      const primeiroValor = tableData[0].value;
-      const ultimoValor = tableData[tableData.length - 1].value;
-      const variacaoIbovespa = ultimoValor - primeiroValor;
+      // Calcular a variação do Ibovespa no período (usando data inicial e data final)
+      const valorInicialIbovespa = filteredData[0].value; // Primeiro dia
+      const valorFinalIbovespa = filteredData[filteredData.length - 1].value; // Último dia
+      const variacaoIbovespa = valorFinalIbovespa - valorInicialIbovespa;
       
       // Se não houver variação, não podemos calcular as contribuições
       if (variacaoIbovespa === 0) {
@@ -1127,14 +1128,16 @@
       grupos.forEach(grupo => {
         let somaEmpresas = 0;
         
-        // Somar os valores das empresas para todas as datas do período (a partir do segundo dia)
-        tableData.forEach(registro => {
+        // CORREÇÃO: Somar os valores das empresas a partir do dia seguinte ao início
+        // filteredData[0] é o primeiro dia, filteredData[1] é o dia seguinte
+        for (let i = 1; i < filteredData.length; i++) {
+          const registro = filteredData[i];
           if (registro.empresas && registro.empresas.length > 0) {
-            for (let i = grupo.colInicio; i <= grupo.colFim && i < registro.empresas.length; i++) {
-              somaEmpresas += registro.empresas[i] || 0;
+            for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
+              somaEmpresas += registro.empresas[j] || 0;
             }
           }
-        });
+        }
         
         // Calcular a contribuição percentual
         const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
@@ -1159,7 +1162,7 @@
         tableBody.appendChild(row);
       });
       
-      // AJUSTE: Adicionar linha "Restante" (100% - contribuição das 30 maiores)
+      // Adicionar linha "Restante" (100% - contribuição das 30 maiores)
       const contribuicaoRestante = 100 - contribuicao30Maiores;
       const restanteFormatado = contribuicaoRestante.toFixed(2);
       const sinalRestante = contribuicaoRestante >= 0 ? '+' : '';
