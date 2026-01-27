@@ -366,11 +366,6 @@
       display: flex;
       flex-direction: column;
     }
-
-    /* Estilo para quando houver apenas uma tabela visível */
-    .table-section.single-table {
-      width: 100%;
-    }
   </style>
 </head>
 <body>
@@ -995,10 +990,10 @@
           ],
         },
         options: {
-          responsive: true;
-          maintainAspectRatio: false;
+          responsive: true,
+          maintainAspectRatio: false,
           interaction: {
-            intersect: false;
+            intersect: false,
             mode: 'index',
           },
           plugins: {
