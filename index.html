@@ -945,28 +945,29 @@
       updateMainChartData();
     }
     
-    // Função para comparar apenas dia, mês e ano
-    function isSameDay(date1, date2) {
-      return date1.getFullYear() === date2.getFullYear() &&
-             date1.getMonth() === date2.getMonth() &&
-             date1.getDate() === date2.getDate();
-    }
-    
     // Filtrar dados por intervalo de datas personalizado
     function filterDataByCustomRange(startDate, endDate) {
       if (allIbovespaData.length === 0) return false;
       
-      // CORREÇÃO: Comparar apenas dia, mês e ano
+      // CORREÇÃO BRUTAL: Vou comparar as datas como strings no formato YYYY-MM-DD
+      // Isso ignora completamente o problema de horas/minutos/segundos
+      const formatDateForComparison = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      // Converter datas de início e fim para o formato de comparação
+      const startStr = formatDateForComparison(startDate);
+      const endStr = formatDateForComparison(endDate);
+      
       filteredData = allIbovespaData.filter(record => {
-        const recordDate = record.date;
+        // Converter data do registro para o mesmo formato
+        const recordStr = formatDateForComparison(record.date);
         
-        // Verificar se a data do registro está entre startDate e endDate (inclusive)
-        // Comparando apenas dia, mês e ano
-        const recordDay = new Date(recordDate.getFullYear(), recordDate.getMonth(), recordDate.getDate());
-        const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-        const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-        
-        return recordDay >= startDay && recordDay <= endDay;
+        // Comparar strings diretamente
+        return recordStr >= startStr && recordStr <= endStr;
       });
       
       // Se não houver dados no intervalo, mostrar mensagem
