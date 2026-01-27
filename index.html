@@ -403,6 +403,7 @@
         <thead>
           <tr>
             <th>Grupo de Empresas</th>
+            <th>Variação (%)</th>
             <th>Contribuição (%)</th>
           </tr>
         </thead>
@@ -1093,14 +1094,11 @@
         return;
       }
       
-      // CORREÇÃO: 
-      // 1. Para o denominador (variação do Ibovespa): (valor do último dia) - (valor do primeiro dia)
-      // 2. Para o numerador (soma das empresas): começar do dia seguinte ao primeiro dia
-      
       // Calcular a variação do Ibovespa no período (usando data inicial e data final)
       const valorInicialIbovespa = filteredData[0].value; // Primeiro dia
       const valorFinalIbovespa = filteredData[filteredData.length - 1].value; // Último dia
       const variacaoIbovespa = valorFinalIbovespa - valorInicialIbovespa;
+      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
       // Se não houver variação, não podemos calcular as contribuições
       if (variacaoIbovespa === 0) {
@@ -1123,13 +1121,13 @@
       tableBody.innerHTML = '';
       
       let contribuicao30Maiores = 0;
+      let variacao30Maiores = 0;
       
       // Calcular contribuição para cada grupo
       grupos.forEach(grupo => {
         let somaEmpresas = 0;
         
-        // CORREÇÃO: Somar os valores das empresas a partir do dia seguinte ao início
-        // filteredData[0] é o primeiro dia, filteredData[1] é o dia seguinte
+        // Somar os valores das empresas a partir do dia seguinte ao início
         for (let i = 1; i < filteredData.length; i++) {
           const registro = filteredData[i];
           if (registro.empresas && registro.empresas.length > 0) {
@@ -1139,23 +1137,32 @@
           }
         }
         
-        // Calcular a contribuição percentual
+        // Calcular a contribuição percentual (sobre a variação do Ibovespa)
         const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
+        
+        // Calcular a variação percentual (sobre o valor inicial do Ibovespa)
+        const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
         
         // Salvar a contribuição das 30 maiores para calcular o restante
         if (grupo.nome === "30 Maiores Empresas") {
           contribuicao30Maiores = contribuicaoPercentual;
+          variacao30Maiores = variacaoPercentual;
         }
         
-        // Formatar o valor com 2 casas decimais
-        const valorFormatado = contribuicaoPercentual.toFixed(2);
-        const sinal = contribuicaoPercentual >= 0 ? '+' : '';
+        // Formatar os valores com 2 casas decimais
+        const variacaoFormatada = variacaoPercentual.toFixed(2);
+        const contribuicaoFormatada = contribuicaoPercentual.toFixed(2);
+        const sinalVariacao = variacaoPercentual >= 0 ? '+' : '';
+        const sinalContribuicao = contribuicaoPercentual >= 0 ? '+' : '';
         
         const row = document.createElement('tr');
         row.innerHTML = `
           <td class="group-cell">${grupo.nome}</td>
+          <td class="value-cell" style="color: ${variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+            ${sinalVariacao}${variacaoFormatada}%
+          </td>
           <td class="value-cell" style="color: ${contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${sinal}${valorFormatado}%
+            ${sinalContribuicao}${contribuicaoFormatada}%
           </td>
         `;
         
@@ -1164,18 +1171,43 @@
       
       // Adicionar linha "Restante" (100% - contribuição das 30 maiores)
       const contribuicaoRestante = 100 - contribuicao30Maiores;
+      const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
       const restanteFormatado = contribuicaoRestante.toFixed(2);
+      const variacaoRestanteFormatada = variacaoRestante.toFixed(2);
       const sinalRestante = contribuicaoRestante >= 0 ? '+' : '';
+      const sinalVariacaoRestante = variacaoRestante >= 0 ? '+' : '';
       
       const restanteRow = document.createElement('tr');
       restanteRow.innerHTML = `
         <td class="group-cell">Restante</td>
+        <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
+          ${sinalVariacaoRestante}${variacaoRestanteFormatada}%
+        </td>
         <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
           ${sinalRestante}${restanteFormatado}%
         </td>
       `;
       
       tableBody.appendChild(restanteRow);
+      
+      // Adicionar linha "Ibovespa"
+      const ibovespaVariacaoFormatada = variacaoPercentualIbovespa.toFixed(2);
+      const sinalIbovespa = variacaoPercentualIbovespa >= 0 ? '+' : '';
+      
+      const ibovespaRow = document.createElement('tr');
+      ibovespaRow.style.backgroundColor = '#f0f5ff';
+      ibovespaRow.style.fontWeight = 'bold';
+      ibovespaRow.innerHTML = `
+        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
+        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
+          ${sinalIbovespa}${ibovespaVariacaoFormatada}%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+      `;
+      
+      tableBody.appendChild(ibovespaRow);
       
       // Mostrar a tabela e o título
       document.getElementById('tableContainer').style.display = 'block';
