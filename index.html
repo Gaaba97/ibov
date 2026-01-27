@@ -947,10 +947,14 @@
     
     // Filtrar dados por intervalo de datas personalizado
     function filterDataByCustomRange(startDate, endDate) {
-      if (allIbovespaData.length === 0) return;
+      if (allIbovespaData.length === 0) return false;
+      
+      // CORREÇÃO: Ajustar a data final para incluir o dia inteiro
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59, 999); // Incluir até o final do dia
       
       filteredData = allIbovespaData.filter(record => {
-        return record.date >= startDate && record.date <= endDate;
+        return record.date >= startDate && record.date <= adjustedEndDate;
       });
       
       // Se não houver dados no intervalo, mostrar mensagem
