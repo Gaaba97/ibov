@@ -700,7 +700,7 @@
         const minAllowedDate = MIN_ALLOWED_DATE;
         
         if (selectedDate < minAllowedDate) {
-          endDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+          endDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate+1)}`;
           endDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
@@ -713,7 +713,7 @@
             startDateInput.value = this.value;
             // Também validar a nova data inicial
             if (startDate < minAllowedDate) {
-              startDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+              startDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate+1)}`;
               startDateError.style.display = 'block';
               startDateInput.style.borderColor = '#ff0000';
             }
