@@ -289,6 +289,70 @@
       color: #000;
       margin-left: 12px;
     }
+
+    /* ESTILOS DA TABELA */
+    .table-container {
+      width: 95%;
+      max-width: 1200px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    .contributions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+    }
+
+    .contributions-table th {
+      background-color: #164CAD;
+      color: white;
+      font-weight: 500;
+      text-align: left;
+      padding: 12px 16px;
+    }
+
+    .contributions-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .contributions-table tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .contributions-table tbody tr:hover {
+      background-color: #f0f5ff;
+    }
+
+    .contributions-table .group-cell {
+      font-weight: 500;
+      color: #164CAD;
+    }
+
+    .contributions-table .value-cell {
+      text-align: right;
+      font-weight: 500;
+      font-family: "DM Sans", sans-serif;
+    }
+
+    .table-title {
+      width: 95%;
+      max-width: 1200px;
+      text-align: left;
+      margin-top: 40px;
+      margin-bottom: 15px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 18px;
+      color: #1E4DB7;
+      font-weight: 500;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -326,6 +390,26 @@
         </div>
       </div>
       <div class="loading" id="loadingIndicator">Carregando gráfico...</div>
+    </div>
+
+    <!-- TÍTULO DA TABELA -->
+    <div class="table-title" id="tableTitle">
+      Contribuição das Maiores Empresas para a Variação do Ibovespa
+    </div>
+
+    <!-- TABELA DE CONTRIBUIÇÕES -->
+    <div class="table-container" id="tableContainer">
+      <table class="contributions-table">
+        <thead>
+          <tr>
+            <th>Grupo de Empresas</th>
+            <th>Contribuição (%)</th>
+          </tr>
+        </thead>
+        <tbody id="contributionsTableBody">
+          <!-- As linhas serão preenchidas via JavaScript -->
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -572,17 +656,29 @@
               continue;
             }
             
+            // Extrair dados das empresas (colunas D até AG)
+            const empresas = [];
+            // Coluna D é o índice 3 (0-based), coluna AG é o índice 32
+            // São 30 colunas no total (D até AG)
+            for (let col = 3; col <= 32 && col < columns.length; col++) {
+              const empresaValueStr = columns[col]?.trim().replace(/"/g, '') || '0';
+              const empresaValue = parseFloat(empresaValueStr.replace(/\./g, '').replace(',', '.'));
+              empresas.push(isNaN(empresaValue) ? 0 : empresaValue);
+            }
+            
             // Adicionar aos dados
             allIbovespaData.push({
               date: date,
               dateStr: dateStr,
               value: value,
-              formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+              empresas: empresas
             });
           }
         }
         
         console.log(`Processados ${allIbovespaData.length} registros válidos.`);
+        console.log(`Exemplo de dados das empresas (primeiro registro):`, allIbovespaData[0]?.empresas?.length || 0, 'colunas');
         
         if (allIbovespaData.length === 0) {
           throw new Error('Nenhum dado válido encontrado na planilha.');
@@ -943,6 +1039,9 @@
       
       // Atualizar gráfico
       updateMainChartData();
+      
+      // Atualizar tabela
+      updateContributionsTable();
     }
     
     // Filtrar dados por intervalo de datas personalizado
@@ -965,6 +1064,10 @@
       
       // Atualizar gráfico
       updateMainChartData();
+      
+      // Atualizar tabela
+      updateContributionsTable();
+      
       return true;
     }
     
@@ -980,6 +1083,77 @@
       
       // Atualizar o gráfico
       ibovespaChart.update();
+    }
+    
+    // Função para calcular e atualizar a tabela de contribuições
+    function updateContributionsTable() {
+      if (filteredData.length === 0) {
+        document.getElementById('tableContainer').style.display = 'none';
+        document.getElementById('tableTitle').style.display = 'none';
+        return;
+      }
+      
+      // Calcular a variação do Ibovespa no período
+      const primeiroValor = filteredData[0].value;
+      const ultimoValor = filteredData[filteredData.length - 1].value;
+      const variacaoIbovespa = ultimoValor - primeiroValor;
+      
+      // Se não houver variação, não podemos calcular as contribuições
+      if (variacaoIbovespa === 0) {
+        document.getElementById('tableContainer').style.display = 'none';
+        document.getElementById('tableTitle').style.display = 'none';
+        return;
+      }
+      
+      // Definir os grupos de empresas e suas respectivas colunas
+      const grupos = [
+        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4 },   // D-H (colunas 0-4)
+        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9 },  // D-M (colunas 0-9)
+        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14 }, // D-R (colunas 0-14)
+        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19 }, // D-W (colunas 0-19)
+        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24 }, // D-AB (colunas 0-24)
+        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29 }  // D-AG (colunas 0-29)
+      ];
+      
+      const tableBody = document.getElementById('contributionsTableBody');
+      tableBody.innerHTML = '';
+      
+      // Calcular contribuição para cada grupo
+      grupos.forEach(grupo => {
+        let somaEmpresas = 0;
+        
+        // Somar os valores das empresas para todas as datas do período
+        filteredData.forEach(registro => {
+          if (registro.empresas && registro.empresas.length > 0) {
+            for (let i = grupo.colInicio; i <= grupo.colFim && i < registro.empresas.length; i++) {
+              somaEmpresas += registro.empresas[i] || 0;
+            }
+          }
+        });
+        
+        // Calcular a contribuição percentual
+        const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
+        
+        // Criar linha da tabela
+        const row = document.createElement('tr');
+        
+        // Formatar o valor com 2 casas decimais
+        const valorFormatado = contribuicaoPercentual.toFixed(2);
+        const sinal = contribuicaoPercentual >= 0 ? '+' : '';
+        
+        row.innerHTML = `
+          <td class="group-cell">${grupo.nome}</td>
+          <td class="value-cell" style="color: ${contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+            ${sinal}${valorFormatado}%
+          </td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
+      
+      // Mostrar a tabela e o título
+      document.getElementById('tableContainer').style.display = 'block';
+      document.getElementById('tableTitle').style.display = 'block';
     }
     
     // Configurar eventos dos botões de período
@@ -1012,6 +1186,7 @@
             case 'all':
               filteredData = [...allIbovespaData];
               updateMainChartData();
+              updateContributionsTable();
               break;
           }
         });
@@ -1104,11 +1279,20 @@
         const randomChange = (Math.random() - 0.5) * 0.03;
         const value = i === 0 ? baseValue : allIbovespaData[i-1].value * (1 + randomChange);
         
+        // Gerar dados de exemplo para as 30 empresas
+        const empresas = [];
+        for (let j = 0; j < 30; j++) {
+          // Cada empresa tem um valor entre 1000 e 5000
+          const empresaValue = 1000 + Math.random() * 4000;
+          empresas.push(empresaValue);
+        }
+        
         allIbovespaData.push({
           date: currentDate,
           dateStr: formatDate(currentDate),
           value: value,
-          formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          empresas: empresas
         });
       }
       
