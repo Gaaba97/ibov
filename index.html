@@ -552,6 +552,10 @@
                 date = new Date(dateStr);
               }
               
+              // FORÇAR HORÁRIO AO MEIO-DIA PARA EVITAR PROBLEMAS DE FUSO/UTC QUE FAZEM A DATA APARECER UM DIA ANTES
+              // (essa é a correção principal para incluir corretamente o "último dia" no filtro)
+              date.setHours(12, 0, 0, 0);
+              
               // Validar a data
               if (isNaN(date.getTime())) {
                 console.warn(`Data inválida na linha ${i + 1}: ${dateStr}`);
@@ -583,6 +587,7 @@
         }
         
         console.log(`Processados ${allIbovespaData.length} registros válidos.`);
+
         
         if (allIbovespaData.length === 0) {
           throw new Error('Nenhum dado válido encontrado na planilha.');
@@ -933,6 +938,8 @@
       
       const cutoffDate = new Date();
       cutoffDate.setMonth(cutoffDate.getMonth() - months);
+      // Normalizar para início do dia para evitar exclusões por horário
+      cutoffDate.setHours(0, 0, 0, 0);
       
       filteredData = allIbovespaData.filter(record => record.date >= cutoffDate);
       
@@ -949,25 +956,15 @@
     function filterDataByCustomRange(startDate, endDate) {
       if (allIbovespaData.length === 0) return false;
       
-      // CORREÇÃO BRUTAL: Vou comparar as datas como strings no formato YYYY-MM-DD
-      // Isso ignora completamente o problema de horas/minutos/segundos
-      const formatDateForComparison = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      
-      // Converter datas de início e fim para o formato de comparação
-      const startStr = formatDateForComparison(startDate);
-      const endStr = formatDateForComparison(endDate);
+      // NORMALIZAR data inicial para COMEÇO DO DIA (00:00:00) para garantir inclusão do dia
+      startDate.setHours(0, 0, 0, 0);
+
+      // CORREÇÃO: Ajustar a data final para incluir o dia inteiro
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59, 999); // Incluir até o final do dia
       
       filteredData = allIbovespaData.filter(record => {
-        // Converter data do registro para o mesmo formato
-        const recordStr = formatDateForComparison(record.date);
-        
-        // Comparar strings diretamente
-        return recordStr >= startStr && recordStr <= endStr;
+        return record.date >= startDate && record.date <= adjustedEndDate;
       });
       
       // Se não houver dados no intervalo, mostrar mensagem
