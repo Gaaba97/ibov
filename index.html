@@ -12,17 +12,17 @@
       font-family: "DM Sans", sans-serif;
       color: #000;
       height: 100%;
-      overflow-y: auto; /* Permitir rolagem vertical */
-      overflow-x: hidden; /* Impedir rolagem horizontal */
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .container {
       width: 100%;
-      min-height: 100vh; /* Usar min-height em vez de height fixo */
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px 0; /* Adicionado padding vertical */
+      padding: 20px 0;
     }
 
     .header-info {
@@ -48,13 +48,13 @@
     .chart-main-container {
       width: 95%;
       max-width: 1200px;
-      height: auto; /* Altura automática */
-      min-height: 400px; /* Altura mínima */
+      height: auto;
+      min-height: 400px;
       display: flex;
       flex-direction: column;
       align-items: center;
       position: relative;
-      margin-bottom: 30px; /* Espaço na parte inferior */
+      margin-bottom: 30px;
     }
 
     .chart-container {
@@ -62,12 +62,12 @@
       justify-content: center;
       align-items: center;
       width: 100%;
-      height: 400px; /* Altura fixa e menor */
+      height: 400px;
       background-color: #fff;
       border-radius: 8px;
       padding: 10px;
       box-sizing: border-box;
-      border: 1px solid #eee; /* Adicionado borda para visualização */
+      /* Removida a borda */
     }
 
     canvas {
@@ -78,10 +78,12 @@
     .period-controls {
       display: flex;
       justify-content: center;
+      align-items: center;
       gap: 10px;
       margin-top: 20px;
       width: 100%;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
     .period-btn {
@@ -103,6 +105,47 @@
       background-color: #164CAD;
       color: white;
       border-color: #164CAD;
+    }
+
+    .custom-range-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: 20px;
+      padding: 8px 12px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .custom-range-container label {
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .date-input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+    }
+
+    .apply-btn {
+      padding: 6px 12px;
+      background-color: #164CAD;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    .apply-btn:hover {
+      background-color: #0d3a8a;
     }
 
     .loading {
@@ -241,6 +284,14 @@
         <button class="period-btn" data-period="6m">6 Meses</button>
         <button class="period-btn" data-period="1y">1 Ano</button>
         <button class="period-btn" data-period="all">Todo Período</button>
+        
+        <div class="custom-range-container">
+          <label for="startDate">De:</label>
+          <input type="date" id="startDate" class="date-input">
+          <label for="endDate">Até:</label>
+          <input type="date" id="endDate" class="date-input">
+          <button id="applyCustomRange" class="apply-btn">Aplicar</button>
+        </div>
       </div>
       <div class="loading" id="loadingIndicator">Carregando gráfico...</div>
     </div>
@@ -482,7 +533,7 @@
             const value = parseFloat(cleanedValue);
             
             if (isNaN(value) || value <= 0) {
-              console.warn(`Valor inválida na linha ${i + 1}: ${valueStr}`);
+              console.warn(`Valor inválido na linha ${i + 1}: ${valueStr}`);
               continue;
             }
             
@@ -509,6 +560,9 @@
         const lastRecord = allIbovespaData[allIbovespaData.length - 1];
         document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
         
+        // Configurar as datas mínima e máxima para os campos de entrada
+        setupDateInputs();
+        
         // Mostrar controles de período e esconder indicador de carregamento
         document.getElementById('periodControls').style.display = 'flex';
         document.getElementById('loadingIndicator').style.display = 'none';
@@ -522,6 +576,9 @@
         // Configurar eventos dos botões
         setupPeriodButtons();
         
+        // Configurar evento para o botão de intervalo personalizado
+        setupCustomRangeButton();
+        
       } catch (error) {
         console.error('Erro ao processar dados CSV:', error);
         document.getElementById('subtitle').textContent = 'Erro ao processar dados da planilha';
@@ -531,6 +588,40 @@
         // Carregar dados de exemplo em caso de falha
         loadSampleData();
       }
+    }
+    
+    // Configurar as datas mínima e máxima para os campos de entrada
+    function setupDateInputs() {
+      if (allIbovespaData.length === 0) return;
+      
+      // Encontrar a data mais antiga e mais recente
+      const minDate = allIbovespaData[0].date;
+      const maxDate = allIbovespaData[allIbovespaData.length - 1].date;
+      
+      // Formatar datas no formato YYYY-MM-DD para os inputs
+      const formatDateForInput = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      // Definir os valores padrão (últimos 30 dias)
+      const defaultEndDate = maxDate;
+      const defaultStartDate = new Date(defaultEndDate);
+      defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
+      
+      // Configurar os atributos dos inputs
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      
+      startDateInput.min = formatDateForInput(minDate);
+      startDateInput.max = formatDateForInput(maxDate);
+      startDateInput.value = formatDateForInput(defaultStartDate);
+      
+      endDateInput.min = formatDateForInput(minDate);
+      endDateInput.max = formatDateForInput(maxDate);
+      endDateInput.value = formatDateForInput(defaultEndDate);
     }
     
     // Função auxiliar para processar linha CSV com aspas
@@ -734,6 +825,25 @@
       updateMainChartData();
     }
     
+    // Filtrar dados por intervalo de datas personalizado
+    function filterDataByCustomRange(startDate, endDate) {
+      if (allIbovespaData.length === 0) return;
+      
+      filteredData = allIbovespaData.filter(record => {
+        return record.date >= startDate && record.date <= endDate;
+      });
+      
+      // Se não houver dados no intervalo, mostrar mensagem
+      if (filteredData.length === 0) {
+        alert('Nenhum dado encontrado para o intervalo selecionado.');
+        return false;
+      }
+      
+      // Atualizar gráfico
+      updateMainChartData();
+      return true;
+    }
+    
     // Atualizar dados do gráfico principal
     function updateMainChartData() {
       if (!ibovespaChart || filteredData.length === 0) return;
@@ -784,6 +894,49 @@
       });
     }
     
+    // Configurar evento para o botão de intervalo personalizado
+    function setupCustomRangeButton() {
+      const applyBtn = document.getElementById('applyCustomRange');
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const periodButtons = document.querySelectorAll('.period-btn');
+      
+      applyBtn.addEventListener('click', function() {
+        // Validar datas
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          alert('Por favor, selecione datas válidas.');
+          return;
+        }
+        
+        if (startDate > endDate) {
+          alert('A data de início deve ser anterior à data de fim.');
+          return;
+        }
+        
+        // Remover classe 'active' de todos os botões de período
+        periodButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Aplicar filtro personalizado
+        if (filterDataByCustomRange(startDate, endDate)) {
+          // Atualizar subtítulo com o intervalo selecionado
+          const formatDateForDisplay = (date) => {
+            return date.toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          };
+          
+          const lastRecord = filteredData[filteredData.length - 1];
+          document.getElementById('subtitle').textContent = 
+            `Intervalo: ${formatDateForDisplay(startDate)} até ${formatDateForDisplay(endDate)} - Ibovespa: ${lastRecord.formattedValue} pontos`;
+        }
+      });
+    }
+    
     // Carregar dados de exemplo (em caso de falha na requisição)
     function loadSampleData() {
       console.log('Carregando dados de exemplo...');
@@ -813,6 +966,9 @@
       const lastRecord = allIbovespaData[allIbovespaData.length - 1];
       document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
       
+      // Configurar as datas mínima e máxima para os campos de entrada
+      setupDateInputs();
+      
       // Mostrar controles de período e esconder indicador de carregamento
       document.getElementById('periodControls').style.display = 'flex';
       document.getElementById('loadingIndicator').style.display = 'none';
@@ -825,6 +981,9 @@
       
       // Configurar eventos dos botões
       setupPeriodButtons();
+      
+      // Configurar evento para o botão de intervalo personalizado
+      setupCustomRangeButton();
       
       // Mostrar aviso que são dados de exemplo
       document.getElementById('subtitle').textContent = 'DADOS DE EXEMPLO - ' + document.getElementById('subtitle').textContent;
