@@ -67,7 +67,6 @@
       border-radius: 8px;
       padding: 10px;
       box-sizing: border-box;
-      /* Removida a borda */
     }
 
     canvas {
@@ -78,7 +77,7 @@
     .period-controls {
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
       margin-top: 20px;
       width: 100%;
@@ -109,19 +108,29 @@
 
     .custom-range-container {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
       margin-left: 20px;
-      padding: 8px 12px;
+      padding: 12px;
       background-color: #f9f9f9;
       border-radius: 4px;
       border: 1px solid #ddd;
+      min-width: 300px;
+    }
+
+    .date-inputs-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
     }
 
     .custom-range-container label {
       font-family: "Montserrat", sans-serif;
       font-size: 14px;
       color: #333;
+      white-space: nowrap;
     }
 
     .date-input {
@@ -130,6 +139,7 @@
       border-radius: 4px;
       font-family: "Montserrat", sans-serif;
       font-size: 14px;
+      flex: 1;
     }
 
     .apply-btn {
@@ -142,10 +152,19 @@
       font-family: "Montserrat", sans-serif;
       font-size: 14px;
       transition: background-color 0.3s ease;
+      align-self: flex-end;
     }
 
     .apply-btn:hover {
       background-color: #0d3a8a;
+    }
+
+    .date-error {
+      color: #ff0000;
+      font-size: 12px;
+      font-family: "Montserrat", sans-serif;
+      margin-top: 2px;
+      display: none;
     }
 
     .loading {
@@ -286,10 +305,18 @@
         <button class="period-btn" data-period="all">Todo Período</button>
         
         <div class="custom-range-container">
-          <label for="startDate">De:</label>
-          <input type="date" id="startDate" class="date-input">
-          <label for="endDate">Até:</label>
-          <input type="date" id="endDate" class="date-input">
+          <div class="date-inputs-row">
+            <label for="startDate">De:</label>
+            <input type="date" id="startDate" class="date-input">
+          </div>
+          <div id="startDateError" class="date-error"></div>
+          
+          <div class="date-inputs-row">
+            <label for="endDate">Até:</label>
+            <input type="date" id="endDate" class="date-input">
+          </div>
+          <div id="endDateError" class="date-error"></div>
+          
           <button id="applyCustomRange" class="apply-btn">Aplicar</button>
         </div>
       </div>
@@ -308,6 +335,9 @@
     let allIbovespaData = [];
     let filteredData = [];
     let percentData = []; // Dados em percentual
+    
+    // Data mínima permitida (30/12/2024)
+    const MIN_ALLOWED_DATE = new Date(2024, 11, 30); // Mês é 0-indexed (11 = Dezembro)
     
     // Tooltip personalizado
     let customTooltip = null;
@@ -579,6 +609,9 @@
         // Configurar evento para o botão de intervalo personalizado
         setupCustomRangeButton();
         
+        // Configurar eventos de validação em tempo real para os campos de data
+        setupDateValidation();
+        
       } catch (error) {
         console.error('Erro ao processar dados CSV:', error);
         document.getElementById('subtitle').textContent = 'Erro ao processar dados da planilha';
@@ -622,6 +655,71 @@
       endDateInput.min = formatDateForInput(minDate);
       endDateInput.max = formatDateForInput(maxDate);
       endDateInput.value = formatDateForInput(defaultEndDate);
+    }
+    
+    // Configurar validação em tempo real para os campos de data
+    function setupDateValidation() {
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const startDateError = document.getElementById('startDateError');
+      const endDateError = document.getElementById('endDateError');
+      
+      // Formatar data no formato dd/mm/aaaa
+      const formatDateBR = (date) => {
+        return date.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        });
+      };
+      
+      // Validar data inicial
+      startDateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const minAllowedDate = MIN_ALLOWED_DATE;
+        
+        if (selectedDate < minAllowedDate) {
+          startDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+          startDateError.style.display = 'block';
+          this.style.borderColor = '#ff0000';
+        } else {
+          startDateError.style.display = 'none';
+          this.style.borderColor = '#ccc';
+          
+          // Verificar se a data final é anterior à data inicial
+          const endDate = new Date(endDateInput.value);
+          if (endDate < selectedDate) {
+            endDateInput.value = this.value;
+          }
+        }
+      });
+      
+      // Validar data final
+      endDateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const minAllowedDate = MIN_ALLOWED_DATE;
+        
+        if (selectedDate < minAllowedDate) {
+          endDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+          endDateError.style.display = 'block';
+          this.style.borderColor = '#ff0000';
+        } else {
+          endDateError.style.display = 'none';
+          this.style.borderColor = '#ccc';
+          
+          // Verificar se a data inicial é posterior à data final
+          const startDate = new Date(startDateInput.value);
+          if (startDate > selectedDate) {
+            startDateInput.value = this.value;
+            // Também validar a nova data inicial
+            if (startDate < minAllowedDate) {
+              startDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+              startDateError.style.display = 'block';
+              startDateInput.style.borderColor = '#ff0000';
+            }
+          }
+        }
+      });
     }
     
     // Função auxiliar para processar linha CSV com aspas
@@ -899,6 +997,8 @@
       const applyBtn = document.getElementById('applyCustomRange');
       const startDateInput = document.getElementById('startDate');
       const endDateInput = document.getElementById('endDate');
+      const startDateError = document.getElementById('startDateError');
+      const endDateError = document.getElementById('endDateError');
       const periodButtons = document.querySelectorAll('.period-btn');
       
       applyBtn.addEventListener('click', function() {
@@ -908,6 +1008,28 @@
         
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
           alert('Por favor, selecione datas válidas.');
+          return;
+        }
+        
+        // Verificar se a data é inferior a 30/12/2024
+        const minAllowedDate = MIN_ALLOWED_DATE;
+        let hasError = false;
+        
+        if (startDate < minAllowedDate) {
+          startDateError.textContent = `Menor data disponível 30/12/2024`;
+          startDateError.style.display = 'block';
+          startDateInput.style.borderColor = '#ff0000';
+          hasError = true;
+        }
+        
+        if (endDate < minAllowedDate) {
+          endDateError.textContent = `Menor data disponível 30/12/2024`;
+          endDateError.style.display = 'block';
+          endDateInput.style.borderColor = '#ff0000';
+          hasError = true;
+        }
+        
+        if (hasError) {
           return;
         }
         
@@ -984,6 +1106,9 @@
       
       // Configurar evento para o botão de intervalo personalizado
       setupCustomRangeButton();
+      
+      // Configurar eventos de validação em tempo real para os campos de data
+      setupDateValidation();
       
       // Mostrar aviso que são dados de exemplo
       document.getElementById('subtitle').textContent = 'DADOS DE EXEMPLO - ' + document.getElementById('subtitle').textContent;
