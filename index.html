@@ -949,12 +949,16 @@
     function filterDataByCustomRange(startDate, endDate) {
       if (allIbovespaData.length === 0) return false;
       
-      // CORREÇÃO: Ajustar a data final para incluir o dia inteiro
+      // CORREÇÃO: Ajustar a data final para o final do dia
       const adjustedEndDate = new Date(endDate);
-      adjustedEndDate.setHours(23, 59, 59, 999); // Incluir até o final do dia
+      adjustedEndDate.setHours(23, 59, 59, 999);
+      
+      // CORREÇÃO: Ajustar a data inicial para o início do dia
+      const adjustedStartDate = new Date(startDate);
+      adjustedStartDate.setHours(0, 0, 0, 0);
       
       filteredData = allIbovespaData.filter(record => {
-        return record.date >= startDate && record.date <= adjustedEndDate;
+        return record.date >= adjustedStartDate && record.date <= adjustedEndDate;
       });
       
       // Se não houver dados no intervalo, mostrar mensagem
