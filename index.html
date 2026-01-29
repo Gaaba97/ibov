@@ -700,50 +700,43 @@
       try {
         const lines = csvText.split('\n');
         
-        // Procurar pela linha que contém "5 Maiores Empresas"
-        // Na planilha de pesos, os pesos estão em colunas separadas, não em linhas
-        // A estrutura é diferente do que imaginei anteriormente
-        // Vamos analisar a estrutura real da planilha
-        
-        console.log('Analisando estrutura da planilha de pesos...');
-        console.log('Primeiras 10 linhas:', lines.slice(0, 10));
-        
-        // Vamos procurar por números na coluna C
-        // A coluna C é a terceira coluna (índice 2)
-        // Mas precisamos entender onde começam os dados
+        // Vamos procurar pela linha que contém "5 Maiores Empresas"
+        let linhaTitulo = -1;
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('5 Maiores Empresas')) {
+            linhaTitulo = i;
+            break;
+          }
+        }
         
         weightsData = [];
         
-        // Procurar por qualquer linha que tenha números na coluna C
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
+        // Se encontrou o título, a próxima linha pode conter os pesos
+        if (linhaTitulo !== -1 && linhaTitulo + 1 < lines.length) {
+          const linhaPesos = lines[linhaTitulo + 1];
+          console.log('Linha após o título (possíveis pesos):', linhaPesos);
           
-          const columns = parseCSVLine(line);
+          const columns = parseCSVLine(linhaPesos);
           
-          // Verificar se temos pelo menos 3 colunas
-          if (columns.length >= 3) {
-            const valueStr = columns[2].trim().replace(/"/g, '');
-            
-            // Tentar extrair um número
+          // A partir da coluna C (índice 2) até a coluna que contém o peso da 30ª empresa
+          // Nota: a planilha tem 30 empresas, então são 30 colunas de pesos
+          // Mas pode haver mais colunas, então vamos pegar até 30 valores numéricos
+          for (let col = 2; col < columns.length && weightsData.length < 30; col++) {
+            const valueStr = columns[col].trim().replace(/"/g, '');
             const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
             const value = parseFloat(cleanedValue);
             
-            // Se for um número válido entre 0 e 100 (peso em %), adicionar
-            if (!isNaN(value) && value > 0 && value <= 100) {
+            if (!isNaN(value) && value > 0) {
               weightsData.push(value);
-              console.log(`Encontrado peso na linha ${i+1}, coluna C: ${value}%`);
             }
           }
         }
         
-        // Se não encontramos pesos suficientes, tentar uma abordagem diferente
+        // Se ainda não encontrou 30 pesos, tentar outra abordagem
         if (weightsData.length < 30) {
-          console.log('Não encontrei pesos suficientes na coluna C. Tentando abordagem alternativa...');
+          console.log('Não conseguiu pegar pesos suficientes pela primeira abordagem. Tentando buscar por linha com muitos números...');
           
-          // Tentar encontrar a seção com os pesos das empresas
-          // A planilha pode ter os pesos em uma linha específica
-          // Vamos procurar por uma linha que tenha muitos números (os 30 pesos)
+          // Procurar por qualquer linha que tenha pelo menos 20 números
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
@@ -752,7 +745,6 @@
             let numerosNaLinha = 0;
             const pesosDaLinha = [];
             
-            // Verificar cada coluna por números
             for (let col = 0; col < columns.length; col++) {
               const valueStr = columns[col].trim().replace(/"/g, '');
               const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
@@ -764,10 +756,9 @@
               }
             }
             
-            // Se encontrarmos pelo menos 20 números, assumimos que são os pesos
             if (numerosNaLinha >= 20) {
               console.log(`Encontrada linha com ${numerosNaLinha} pesos:`, pesosDaLinha);
-              weightsData = pesosDaLinha.slice(0, 30); // Pegar apenas os primeiros 30
+              weightsData = pesosDaLinha.slice(0, 30);
               break;
             }
           }
