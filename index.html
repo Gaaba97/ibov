@@ -549,11 +549,11 @@
     let allIbovespaData = [];
     let filteredData = [];
     let percentData = [];
-    let weightsData = []; // Array para armazenar os pesos das empresas
-    
+    let weightsData = []; // array bruto lido da planilha (não mais necessário para cálculo direto)
+    let computedWeights = null; // objeto com os pesos calculados conforme C2..C31
     // Data mínima permitida (30/12/2024)
-    const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
-    
+    const MIN_ALLOWED_DATE = new Date(2024, 11, 30); // 30 de dezembro de 2024
+
     // Tooltip personalizado
     let customTooltip = null;
 
@@ -692,97 +692,99 @@
         console.error('Erro ao buscar dados dos pesos:', error);
         // Sem dados de exemplo - deixar vazio
         weightsData = [];
+        computedWeights = null;
       }
     }
 
-    // Função para processar dados CSV de pesos - CORRIGIDA
+    // Função para processar dados CSV de pesos - EXTRAÇÃO DIRETA DE C2..C31
     function processWeightsCSVData(csvText) {
       try {
-        const lines = csvText.split('\n');
-        
-        // Vamos procurar pela linha que contém "5 Maiores Empresas"
-        let linhaTitulo = -1;
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].includes('5 Maiores Empresas')) {
-            linhaTitulo = i;
-            break;
-          }
+        // Converter CSV em matriz de linhas x colunas usando parseCSVLine
+        const rawLines = csvText.split('\n');
+        const rows = rawLines.map(line => parseCSVLine(line || ''));
+
+        // coluna C tem índice 2 (A=0, B=1, C=2)
+        const colIndex = 2;
+
+        // Função para transformar string em número (limpa '.', troca ',' por '.', remove '%')
+        function parseNumeric(value) {
+          if (value === undefined || value === null) return 0;
+          let s = String(value).replace(/"/g, '').trim();
+          if (s === '') return 0;
+          s = s.replace('%', '').trim();
+          // remover espaços e pontos de milhar, trocar vírgula decimal por ponto
+          s = s.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+          const n = parseFloat(s);
+          return isNaN(n) ? 0 : n;
         }
-        
+
+        // Helper para somar uma faixa de linhas (1-based rows passed)
+        function sumColumnRows(rowStart1Based, rowEnd1Based) {
+          const startIdx = rowStart1Based - 1;
+          const endIdx = rowEnd1Based - 1;
+          let sum = 0;
+          for (let r = startIdx; r <= endIdx; r++) {
+            if (r >= 0 && r < rows.length) {
+              const cell = rows[r][colIndex];
+              sum += parseNumeric(cell);
+            }
+          }
+          return sum;
+        }
+
+        // Tentar extrair as células C2..C31 (linhas 2 a 31)
+        // O usuário pediu: some C2..C6, C2..C11, ... C2..C31 e divida por 100
+        const soma5 = sumColumnRows(2, 6);
+        const soma10 = sumColumnRows(2, 11);
+        const soma15 = sumColumnRows(2, 16);
+        const soma20 = sumColumnRows(2, 21);
+        const soma25 = sumColumnRows(2, 26);
+        const soma30 = sumColumnRows(2, 31);
+
+        // Se todos zero, tentaremos uma heurística (linha de header diferente). Mas mesmo assim, guardar zeros.
+        const round2 = (v) => Math.round(v * 100) / 100;
+
+        // Dividir por 100 conforme instruído para trazer em percentual.
+        const peso5 = round2(soma5 / 100);
+        const peso10 = round2(soma10 / 100);
+        const peso15 = round2(soma15 / 100);
+        const peso20 = round2(soma20 / 100);
+        const peso25 = round2(soma25 / 100);
+        const peso30 = round2(soma30 / 100);
+
+        const pesoRestante = round2(100 - peso30);
+
+        computedWeights = {
+          peso5Maiores: peso5,
+          peso10Maiores: peso10,
+          peso15Maiores: peso15,
+          peso20Maiores: peso20,
+          peso25Maiores: peso25,
+          peso30Maiores: peso30,
+          pesoRestante: pesoRestante,
+          pesoIbov: 100
+        };
+
+        // Também preencher weightsData bruto para compatibilidade (coluna C das linhas 2..31)
         weightsData = [];
-        
-        // Se encontrou o título, a próxima linha pode conter os pesos
-        if (linhaTitulo !== -1 && linhaTitulo + 1 < lines.length) {
-          const linhaPesos = lines[linhaTitulo + 1];
-          console.log('Linha após o título (possíveis pesos):', linhaPesos);
-          
-          const columns = parseCSVLine(linhaPesos);
-          
-          // A partir da coluna C (índice 2) até a coluna que contém o peso da 30ª empresa
-          // Nota: a planilha tem 30 empresas, então são 30 colunas de pesos
-          // Mas pode haver mais colunas, então vamos pegar até 30 valores numéricos
-          for (let col = 2; col < columns.length && weightsData.length < 30; col++) {
-            const valueStr = columns[col].trim().replace(/"/g, '');
-            const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
-            const value = parseFloat(cleanedValue);
-            
-            if (!isNaN(value) && value > 0) {
-              weightsData.push(value);
-            }
-          }
+        for (let r = 1; r <= 30; r++) {
+          const cell = (rows[r] && rows[r][colIndex]) ? rows[r][colIndex] : '';
+          weightsData.push(parseNumeric(cell));
         }
-        
-        // Se ainda não encontrou 30 pesos, tentar outra abordagem
-        if (weightsData.length < 30) {
-          console.log('Não conseguiu pegar pesos suficientes pela primeira abordagem. Tentando buscar por linha com muitos números...');
-          
-          // Procurar por qualquer linha que tenha pelo menos 20 números
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            
-            const columns = parseCSVLine(line);
-            let numerosNaLinha = 0;
-            const pesosDaLinha = [];
-            
-            for (let col = 0; col < columns.length; col++) {
-              const valueStr = columns[col].trim().replace(/"/g, '');
-              const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
-              const value = parseFloat(cleanedValue);
-              
-              if (!isNaN(value) && value > 0) {
-                numerosNaLinha++;
-                pesosDaLinha.push(value);
-              }
-            }
-            
-            if (numerosNaLinha >= 20) {
-              console.log(`Encontrada linha com ${numerosNaLinha} pesos:`, pesosDaLinha);
-              weightsData = pesosDaLinha.slice(0, 30);
-              break;
-            }
-          }
+
+        console.log('Pesos processados (extração direta de C2..C31):', computedWeights);
+        // validar
+        if (Object.values(computedWeights).every(v => v === 0)) {
+          console.warn('Possivelmente não encontrou valores válidos na coluna C das linhas 2..31 (pesos zerados). Verifique o CSV da aba Pesos.');
         }
-        
-        console.log(`Processados ${weightsData.length} pesos.`);
-        
-        if (weightsData.length === 0) {
-          console.warn('Nenhum peso válido encontrado na planilha de pesos.');
-        } else {
-          console.log('Pesos encontrados:', weightsData);
-          
-          // Verificar a soma das 5 primeiras
-          const soma5 = weightsData.slice(0, 5).reduce((a, b) => a + b, 0);
-          console.log(`Soma das 5 primeiras empresas: ${soma5}%`);
-        }
-        
       } catch (error) {
         console.error('Erro ao processar dados de pesos CSV:', error);
         weightsData = [];
+        computedWeights = null;
       }
     }
 
-    // Função para processar dados CSV
+    // Função para processar dados CSV principal
     function processCSVData(csvText) {
       try {
         const lines = csvText.split('\n');
@@ -1058,71 +1060,46 @@
       return percentageData;
     }
     
-    // Função para calcular os pesos dos grupos - CORRIGIDA
+    // Função para calcular os pesos dos grupos - usa computedWeights se disponível
     function calculateGroupWeights() {
-      if (weightsData.length < 30) {
-        console.warn(`Dados de pesos insuficientes: ${weightsData.length}/30`);
-        
-        // Se não temos dados suficientes, retornar zeros
+      if (computedWeights) {
+        return computedWeights;
+      }
+
+      // Fallback - se não houver computedWeights, tentar usar weightsData bruto (soma primeiros N valores e assumir que precisam ser normalizados)
+      if (weightsData && weightsData.length >= 30) {
+        let soma5 = 0, soma10 = 0, soma15 = 0, soma20 = 0, soma25 = 0, soma30 = 0;
+        for (let i = 0; i < 30; i++) {
+          const w = weightsData[i] || 0;
+          if (i < 5) soma5 += w;
+          if (i < 10) soma10 += w;
+          if (i < 15) soma15 += w;
+          if (i < 20) soma20 += w;
+          if (i < 25) soma25 += w;
+          soma30 += w;
+        }
+        const round2 = (v) => Math.round(v * 100) / 100;
         return {
-          peso5Maiores: 0,
-          peso10Maiores: 0,
-          peso15Maiores: 0,
-          peso20Maiores: 0,
-          peso25Maiores: 0,
-          peso30Maiores: 0,
-          pesoRestante: 100, // Se não temos pesos, assume que tudo é "restante"
+          peso5Maiores: round2(soma5 / 100),
+          peso10Maiores: round2(soma10 / 100),
+          peso15Maiores: round2(soma15 / 100),
+          peso20Maiores: round2(soma20 / 100),
+          peso25Maiores: round2(soma25 / 100),
+          peso30Maiores: round2(soma30 / 100),
+          pesoRestante: round2(100 - (soma30 / 100)),
           pesoIbov: 100
         };
       }
-      
-      // Calcular somas acumuladas CORRETAMENTE
-      let soma5Maiores = 0;
-      let soma10Maiores = 0;
-      let soma15Maiores = 0;
-      let soma20Maiores = 0;
-      let soma25Maiores = 0;
-      let soma30Maiores = 0;
-      
-      // Soma dos primeiros N pesos
-      for (let i = 0; i < 30; i++) {
-        const peso = weightsData[i] || 0;
-        if (i < 5) soma5Maiores += peso;
-        if (i < 10) soma10Maiores += peso;
-        if (i < 15) soma15Maiores += peso;
-        if (i < 20) soma20Maiores += peso;
-        if (i < 25) soma25Maiores += peso;
-        soma30Maiores += peso; // Soma todas as 30
-      }
-      
-      // Arredondar para 2 casas decimais
-      soma5Maiores = Math.round(soma5Maiores * 100) / 100;
-      soma10Maiores = Math.round(soma10Maiores * 100) / 100;
-      soma15Maiores = Math.round(soma15Maiores * 100) / 100;
-      soma20Maiores = Math.round(soma20Maiores * 100) / 100;
-      soma25Maiores = Math.round(soma25Maiores * 100) / 100;
-      soma30Maiores = Math.round(soma30Maiores * 100) / 100;
-      
-      const pesoRestante = 100 - soma30Maiores;
-      
-      console.log("Cálculo REAL dos pesos:", {
-        soma5Maiores,
-        soma10Maiores,
-        soma15Maiores,
-        soma20Maiores,
-        soma25Maiores,
-        soma30Maiores,
-        pesoRestante
-      });
-      
+
+      // último recurso: zeros
       return {
-        peso5Maiores: soma5Maiores,
-        peso10Maiores: soma10Maiores,
-        peso15Maiores: soma15Maiores,
-        peso20Maiores: soma20Maiores,
-        peso25Maiores: soma25Maiores,
-        peso30Maiores: soma30Maiores,
-        pesoRestante: pesoRestante,
+        peso5Maiores: 0,
+        peso10Maiores: 0,
+        peso15Maiores: 0,
+        peso20Maiores: 0,
+        peso25Maiores: 0,
+        peso30Maiores: 0,
+        pesoRestante: 100,
         pesoIbov: 100
       };
     }
@@ -1573,6 +1550,7 @@
       document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
       
       weightsData = []; // Limpar pesos de exemplo
+      computedWeights = null;
       
       setupDateInputs();
       
