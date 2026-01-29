@@ -420,6 +420,7 @@
                 <th>Grupo de Empresas</th>
                 <th>Variação (%)</th>
                 <th>Contribuição (%)</th>
+                <th>Peso Atual (%)</th>
               </tr>
             </thead>
             <tbody id="contributionsTableBody1">
@@ -441,6 +442,7 @@
                 <th>Grupo de Empresas</th>
                 <th>Variação (%)</th>
                 <th>Contribuição (%)</th>
+                <th>Peso Atual (%)</th>
               </tr>
             </thead>
             <tbody id="contributionsTableBody2">
@@ -462,6 +464,7 @@
                 <th>Grupo de Empresas</th>
                 <th>Variação (%)</th>
                 <th>Contribuição (%)</th>
+                <th>Peso Atual (%)</th>
               </tr>
             </thead>
             <tbody id="contributionsTableBody3">
@@ -479,11 +482,15 @@
     // URL da planilha pública do Google Sheets (Ibovespa)
     const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
     
+    // URL da planilha de Pesos (aba Pesos)
+    const WEIGHTS_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?gid=1&output=csv";
+    
     // Variáveis globais
     let ibovespaChart = null;
     let allIbovespaData = [];
     let filteredData = [];
     let percentData = []; // Dados em percentual
+    let weightsData = []; // Array para armazenar os pesos das empresas
     
     // Data mínima permitida (30/12/2024)
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29); // Mês é 0-indexed (11 = Dezembro)
@@ -620,6 +627,128 @@
       }
     }
 
+    // Função para buscar dados dos pesos da planilha
+    async function loadWeightsData() {
+      try {
+        console.log('Iniciando busca de dados dos pesos...');
+        
+        const response = await fetch(WEIGHTS_SPREADSHEET_URL);
+        
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const csvText = await response.text();
+        console.log('Dados de pesos CSV recebidos, processando...');
+        
+        // Processar os dados CSV de pesos
+        processWeightsCSVData(csvText);
+        
+      } catch (error) {
+        console.error('Erro ao buscar dados dos pesos:', error);
+        // Em caso de erro, usar pesos de exemplo
+        loadSampleWeightsData();
+      }
+    }
+
+    // Função para processar dados CSV de pesos
+    function processWeightsCSVData(csvText) {
+      try {
+        // Dividir o CSV em linhas
+        const lines = csvText.split('\n');
+        
+        // Procurar pela seção "5 Maiores Empresas" e a coluna C
+        let startIndex = -1;
+        
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].includes('5 Maiores Empresas')) {
+            startIndex = i;
+            break;
+          }
+        }
+        
+        // Se não encontrou pelo título, procura por linhas que contenham pesos
+        if (startIndex === -1) {
+          for (let i = 0; i < lines.length; i++) {
+            if (lines[i].match(/[\d,]+/)) {
+              startIndex = i;
+              break;
+            }
+          }
+        }
+        
+        // Se ainda não encontrou, usa a partir da primeira linha
+        if (startIndex === -1) {
+          startIndex = 0;
+        }
+        
+        console.log(`Iniciando processamento de pesos a partir da linha ${startIndex + 1}`);
+        
+        // Extrair os pesos da coluna C (índice 2 se considerarmos 0-based)
+        weightsData = [];
+        
+        for (let i = startIndex; i < lines.length && weightsData.length < 31; i++) {
+          const line = lines[i].trim();
+          
+          // Ignorar linhas vazias
+          if (!line || line.length === 0) {
+            continue;
+          }
+          
+          // Dividir a linha por vírgulas
+          let columns;
+          
+          if (line.includes('"')) {
+            columns = parseCSVLine(line);
+          } else {
+            columns = line.split(',');
+          }
+          
+          // Coluna C é o índice 2 (A=0, B=1, C=2)
+          if (columns.length >= 3) {
+            const weightStr = columns[2].trim().replace(/"/g, '');
+            
+            // Remover pontos de milhar e converter vírgula para ponto
+            const cleanedWeight = weightStr.replace(/\./g, '').replace(',', '.');
+            const weight = parseFloat(cleanedWeight);
+            
+            if (!isNaN(weight) && weight > 0) {
+              weightsData.push(weight);
+            }
+          }
+        }
+        
+        console.log(`Processados ${weightsData.length} pesos válidos.`);
+        console.log(`Pesos:`, weightsData);
+        
+        if (weightsData.length === 0) {
+          console.warn('Nenhum peso válido encontrado, usando pesos de exemplo');
+          loadSampleWeightsData();
+        }
+        
+      } catch (error) {
+        console.error('Erro ao processar dados de pesos CSV:', error);
+        loadSampleWeightsData();
+      }
+    }
+
+    // Função para carregar pesos de exemplo
+    function loadSampleWeightsData() {
+      console.log('Carregando pesos de exemplo...');
+      
+      // Pesos de exemplo baseados em distribuição típica do Ibovespa
+      weightsData = [
+        8.5, 7.2, 6.8, 5.5, 4.9,  // 5 maiores
+        4.3, 4.1, 3.8, 3.5, 3.2,  // 6-10
+        3.0, 2.8, 2.6, 2.4, 2.2,  // 11-15
+        2.0, 1.8, 1.6, 1.5, 1.4,  // 16-20
+        1.3, 1.2, 1.1, 1.0, 0.9,  // 21-25
+        0.8, 0.7, 0.6, 0.5, 0.4   // 26-30
+      ];
+      
+      console.log('Pesos de exemplo carregados:', weightsData);
+    }
+
     // Função para processar dados CSV
     function processCSVData(csvText) {
       try {
@@ -751,27 +880,30 @@
         const lastRecord = allIbovespaData[allIbovespaData.length - 1];
         document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
         
-        // Configurar as datas mínima e máxima para os campos de entrada
-        setupDateInputs();
-        
-        // Mostrar controles de período e esconder indicador de carregamento
-        document.getElementById('periodControls').style.display = 'flex';
-        document.getElementById('loadingIndicator').style.display = 'none';
-        
-        // Criar gráfico principal
-        createMainChart();
-        
-        // Inicializar com filtro de 1 mês
-        filterDataByMonths(1);
-        
-        // Configurar eventos dos botões
-        setupPeriodButtons();
-        
-        // Configurar evento para o botão de intervalo personalizado
-        setupCustomRangeButton();
-        
-        // Configurar eventos de validação em tempo real para os campos de data
-        setupDateValidation();
+        // Carregar dados dos pesos
+        loadWeightsData().then(() => {
+          // Configurar as datas mínima e máxima para os campos de entrada
+          setupDateInputs();
+          
+          // Mostrar controles de período e esconder indicador de carregamento
+          document.getElementById('periodControls').style.display = 'flex';
+          document.getElementById('loadingIndicator').style.display = 'none';
+          
+          // Criar gráfico principal
+          createMainChart();
+          
+          // Inicializar com filtro de 1 mês
+          filterDataByMonths(1);
+          
+          // Configurar eventos dos botões
+          setupPeriodButtons();
+          
+          // Configurar evento para o botão de intervalo personalizado
+          setupCustomRangeButton();
+          
+          // Configurar eventos de validação em tempo real para os campos de data
+          setupDateValidation();
+        });
         
       } catch (error) {
         console.error('Erro ao processar dados CSV:', error);
@@ -941,6 +1073,54 @@
       }
       
       return percentageData;
+    }
+    
+    // Função para calcular os pesos dos grupos
+    function calculateGroupWeights() {
+      if (weightsData.length === 0) {
+        // Se não houver pesos, retornar pesos vazios
+        return {
+          peso5Maiores: 0,
+          peso10Maiores: 0,
+          peso15Maiores: 0,
+          peso20Maiores: 0,
+          peso25Maiores: 0,
+          peso30Maiores: 0,
+          pesoRestante: 0,
+          pesoIbov: 100
+        };
+      }
+      
+      // Calcular somas acumuladas
+      let soma5Maiores = 0;
+      let soma10Maiores = 0;
+      let soma15Maiores = 0;
+      let soma20Maiores = 0;
+      let soma25Maiores = 0;
+      let soma30Maiores = 0;
+      
+      for (let i = 0; i < weightsData.length; i++) {
+        if (i < 5) soma5Maiores += weightsData[i];
+        if (i < 10) soma10Maiores += weightsData[i];
+        if (i < 15) soma15Maiores += weightsData[i];
+        if (i < 20) soma20Maiores += weightsData[i];
+        if (i < 25) soma25Maiores += weightsData[i];
+        if (i < 30) soma30Maiores += weightsData[i];
+      }
+      
+      // Calcular o resto
+      const pesoRestante = 100 - soma30Maiores;
+      
+      return {
+        peso5Maiores: soma5Maiores,
+        peso10Maiores: soma10Maiores,
+        peso15Maiores: soma15Maiores,
+        peso20Maiores: soma20Maiores,
+        peso25Maiores: soma25Maiores,
+        peso30Maiores: soma30Maiores,
+        pesoRestante: pesoRestante,
+        pesoIbov: 100
+      };
     }
     
     // Criar gráfico principal do Ibovespa
@@ -1175,14 +1355,17 @@
         return;
       }
       
+      // Calcular os pesos dos grupos
+      const pesos = calculateGroupWeights();
+      
       // Definir os grupos de empresas e suas respectivas colunas
       const grupos = [
-        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4 },   // D-H (colunas 0-4)
-        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9 },  // D-M (colunas 0-9)
-        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14 }, // D-R (colunas 0-14)
-        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19 }, // D-W (colunas 0-19)
-        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24 }, // D-AB (colunas 0-24)
-        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29 }  // D-AG (colunas 0-29)
+        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, peso: pesos.peso5Maiores },   // D-H (colunas 0-4)
+        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, peso: pesos.peso10Maiores },  // D-M (colunas 0-9)
+        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, peso: pesos.peso15Maiores }, // D-R (colunas 0-14)
+        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, peso: pesos.peso20Maiores }, // D-W (colunas 0-19)
+        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, peso: pesos.peso25Maiores }, // D-AB (colunas 0-24)
+        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, peso: pesos.peso30Maiores }  // D-AG (colunas 0-29)
       ];
       
       // Atualizar todas as três tabelas com os mesmos dados
@@ -1222,6 +1405,7 @@
           // Formatar os valores com 2 casas decimais
           const variacaoFormatada = variacaoPercentual.toFixed(2);
           const contribuicaoFormatada = contribuicaoPercentual.toFixed(2);
+          const pesoFormatado = grupo.peso.toFixed(2);
           const sinalVariacao = variacaoPercentual >= 0 ? '+' : '';
           const sinalContribuicao = contribuicaoPercentual >= 0 ? '+' : '';
           
@@ -1233,6 +1417,9 @@
             </td>
             <td class="value-cell" style="color: ${contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
               ${sinalContribuicao}${contribuicaoFormatada}%
+            </td>
+            <td class="value-cell" style="color: #1E4DB7">
+              ${pesoFormatado}%
             </td>
           `;
           
@@ -1256,6 +1443,9 @@
           <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
             ${sinalRestante}${restanteFormatado}%
           </td>
+          <td class="value-cell" style="color: #1E4DB7">
+            ${pesos.pesoRestante.toFixed(2)}%
+          </td>
         `;
         
         tableBody.appendChild(restanteRow);
@@ -1274,6 +1464,9 @@
           </td>
           <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
             100.00%
+          </td>
+          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+            ${pesos.pesoIbov.toFixed(2)}%
           </td>
         `;
         
@@ -1428,6 +1621,9 @@
       // Atualizar subtítulo
       const lastRecord = allIbovespaData[allIbovespaData.length - 1];
       document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
+      
+      // Carregar pesos de exemplo
+      loadSampleWeightsData();
       
       // Configurar as datas mínima e máxima para os campos de entrada
       setupDateInputs();
