@@ -1418,7 +1418,7 @@
               ${sinalContribuicao}${contribuicaoFormatada}%
             </td>
             <td class="value-cell" style="color: #1E4DB7">
-              ${pesoFormatado}%
+              <!-- Quarta coluna vazia para todas as linhas, exceto Ibovespa -->
             </td>
           `;
           
@@ -1442,7 +1442,7 @@
             ${sinalRestante}${restanteFormatado}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
-            ${pesos.pesoRestante.toFixed(2)}%
+            <!-- Quarta coluna vazia para todas as linhas, exceto Ibovespa -->
           </td>
         `;
         
@@ -1463,7 +1463,7 @@
             100.00%
           </td>
           <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-            ${pesos.pesoIbov.toFixed(2)}%
+            100.00%
           </td>
         `;
         
