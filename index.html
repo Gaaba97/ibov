@@ -324,10 +324,9 @@
       font-weight: 500;
       text-align: center;
       padding: 12px 8px;
-      white-space: normal; /* Permite quebra de linha */
-      word-wrap: break-word;
-      word-break: break-word; /* Permite quebra em qualquer lugar */
-      overflow-wrap: break-word; /* Permite quebra em qualquer lugar */
+      white-space: normal; /* Permite quebra de linha apenas em espaços */
+      word-break: normal;   /* Não quebra palavras no meio */
+      overflow-wrap: normal; /* Não força quebra dentro da palavra */
       line-height: 1.2;
     }
 
@@ -551,15 +550,8 @@
     let allIbovespaData = [];
     let filteredData = [];
     let percentData = [];
-    let weightsData = []; // Array para armazenar os pesos das empresas
-    let peso5 = 0;
-    let peso10 = 0;
-    let peso15 = 0;
-    let peso20 = 0;
-    let peso25 = 0;
-    let peso30 = 0;
-    let pesoRestante = 0;
-    let pesoIbovespa = 0;
+    let weightsData = []; // Mantido por compatibilidade, mas não usado para somas agora
+    let weightsMap = null; // Novo: mapa com valores lidos direto de J2..J9
     
     // Data mínima permitida (30/12/2024)
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
@@ -702,128 +694,128 @@
         console.error('Erro ao buscar dados dos pesos:', error);
         // Sem dados de exemplo - deixar vazio
         weightsData = [];
+        weightsMap = null;
       }
     }
 
-    // Função para processar dados CSV de pesos - MODIFICADA para pegar células específicas
+    // Função para processar dados CSV de pesos - agora pega direto J2..J9
     function processWeightsCSVData(csvText) {
       try {
-        const lines = csvText.split('\n');
-        console.log('Total de linhas na planilha de pesos:', lines.length);
-        
-        // Vamos analisar a estrutura
-        console.log('Primeiras 15 linhas:');
-        for (let i = 0; i < Math.min(15, lines.length); i++) {
-          console.log(`Linha ${i}:`, lines[i]);
+        const rawLines = csvText.split(/\r?\n/);
+        const lines = rawLines.map(l => l.replace(/\r/g, ''));
+
+        // Helper para pegar cell (linhaIndex 0-based, colIndex 0-based)
+        function getCellValue(lineIndex, colIndex) {
+          if (lineIndex < 0 || lineIndex >= lines.length) return null;
+          const cols = parseCSVLine(lines[lineIndex]);
+          if (!cols || colIndex < 0 || colIndex >= cols.length) return null;
+          return cols[colIndex].trim().replace(/"/g, '');
         }
-        
-        // Resetar valores
-        peso5 = 0;
-        peso10 = 0;
-        peso15 = 0;
-        peso20 = 0;
-        peso25 = 0;
-        peso30 = 0;
-        pesoRestante = 0;
-        pesoIbovespa = 0;
-        
-        // Procurar pelas células específicas J2 a J9
-        // J = coluna 10 (índice 9, começando em 0)
-        // Linhas: J2 (linha 2, índice 1), J3 (linha 3, índice 2), etc.
-        
-        for (let rowIndex = 0; rowIndex < lines.length; rowIndex++) {
-          const line = lines[rowIndex].trim();
-          if (!line) continue;
-          
-          const columns = parseCSVLine(line);
-          
-          // Se for a linha 2 (índice 1) e tiver pelo menos 10 colunas
-          if (rowIndex === 1 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            peso5 = parseFloat(cleanedWeight);
-            console.log(`J2 (5 Maiores) encontrado: ${peso5}`);
-          }
-          
-          // Linha 3 (índice 2) - J3
-          if (rowIndex === 2 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            peso10 = parseFloat(cleanedWeight);
-            console.log(`J3 (10 Maiores) encontrado: ${peso10}`);
-          }
-          
-          // Linha 4 (índice 3) - J4
-          if (rowIndex === 3 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            peso15 = parseFloat(cleanedWeight);
-            console.log(`J4 (15 Maiores) encontrado: ${peso15}`);
-          }
-          
-          // Linha 5 (índice 4) - J5
-          if (rowIndex === 4 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            peso20 = parseFloat(cleanedWeight);
-            console.log(`J5 (20 Maiores) encontrado: ${peso20}`);
-          }
-          
-          // Linha 6 (índice 5) - J6
-          if (rowIndex === 5 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            peso25 = parseFloat(cleanedWeight);
-            console.log(`J6 (25 Maiores) encontrado: ${peso25}`);
-          }
-          
-          // Linha 7 (índice 6) - J7
-          if (rowIndex === 6 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            peso30 = parseFloat(cleanedWeight);
-            console.log(`J7 (30 Maiores) encontrado: ${peso30}`);
-          }
-          
-          // Linha 8 (índice 7) - J8
-          if (rowIndex === 7 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            pesoRestante = parseFloat(cleanedWeight);
-            console.log(`J8 (Restante) encontrado: ${pesoRestante}`);
-          }
-          
-          // Linha 9 (índice 8) - J9
-          if (rowIndex === 8 && columns.length >= 10) {
-            const valueStr = columns[9].trim().replace(/"/g, '');
-            const cleanedWeight = valueStr.replace(/\./g, '').replace(',', '.');
-            pesoIbovespa = parseFloat(cleanedWeight);
-            console.log(`J9 (Ibovespa) encontrado: ${pesoIbovespa}`);
+
+        // Tentativa direta: ler J2..J9 -> colIndex = 9, rowIndex = 1..8 (0-based)
+        const desiredRows = [1,2,3,4,5,6,7,8];
+        const colIndexJ = 9;
+        const extracted = [];
+
+        for (let i = 0; i < desiredRows.length; i++) {
+          const rowIdx = desiredRows[i];
+          const rawVal = getCellValue(rowIdx, colIndexJ);
+          if (rawVal === null || rawVal === '') {
+            extracted.push(null);
+          } else {
+            const cleaned = rawVal.replace(/\./g, '').replace(',', '.').replace('%','').trim();
+            const num = parseFloat(cleaned);
+            extracted.push(isNaN(num) ? null : num);
           }
         }
-        
-        // Verificar se os valores foram encontrados
-        console.log('Valores finais encontrados:');
-        console.log(`5 Maiores: ${peso5}`);
-        console.log(`10 Maiores: ${peso10}`);
-        console.log(`15 Maiores: ${peso15}`);
-        console.log(`20 Maiores: ${peso20}`);
-        console.log(`25 Maiores: ${peso25}`);
-        console.log(`30 Maiores: ${peso30}`);
-        console.log(`Restante: ${pesoRestante}`);
-        console.log(`Ibovespa: ${pesoIbovespa}`);
-        
+
+        // Se algum valor faltar, tentar varredura da coluna J por números no arquivo
+        if (extracted.some(v => v === null)) {
+          console.log('Algumas células J2..J9 não foram encontradas diretamente. Fazendo varredura alternativa na coluna J...');
+          const found = [];
+          for (let i = 0; i < lines.length && found.length < 8; i++) {
+            const val = getCellValue(i, colIndexJ);
+            if (!val) continue;
+            const cleaned = val.replace(/\./g, '').replace(',', '.').replace('%','').trim();
+            const num = parseFloat(cleaned);
+            if (!isNaN(num)) {
+              // evitar repetir se último é igual
+              if (found.length === 0 || found[found.length - 1] !== num) {
+                found.push(num);
+              }
+            }
+          }
+          // preencher os nulos com os encontrados (na ordem)
+          let fi = 0;
+          for (let k = 0; k < extracted.length && fi < found.length; k++) {
+            if (extracted[k] === null) {
+              extracted[k] = found[fi++];
+            }
+          }
+        }
+
+        // Se ainda faltarem, tentar varrer todas as colunas procurando as labels e valores próximos (heurística)
+        if (extracted.some(v => v === null)) {
+          console.log('Ainda faltam valores — tentando heurística por rótulos (5 Maiores, 10 Maiores, etc)...');
+          // Procurar linhas com textos contendo '5 Maiores' etc e tentar pegar coluna adjacente
+          const labels = ['5 maiores', '10 maiores', '15 maiores', '20 maiores', '25 maiores', '30 maiores', 'restante', 'ibovespa'];
+          const heurFound = [];
+          for (let i = 0; i < lines.length && heurFound.length < 8; i++) {
+            const low = lines[i].toLowerCase();
+            for (let j = 0; j < labels.length; j++) {
+              if (low.includes(labels[j]) && heurFound.length <= j) {
+                // tentar extrair número da mesma linha (qualquer coluna)
+                const cols = parseCSVLine(lines[i]);
+                for (let c = 0; c < cols.length; c++) {
+                  const cleaned = cols[c].replace(/\./g, '').replace(',', '.').replace('%','').trim();
+                  const num = parseFloat(cleaned);
+                  if (!isNaN(num)) {
+                    heurFound[j] = num;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          for (let idx = 0; idx < extracted.length; idx++) {
+            if (extracted[idx] === null && heurFound[idx] !== undefined) {
+              extracted[idx] = heurFound[idx];
+            }
+          }
+        }
+
+        // Preparar mapa final
+        // Ordem solicitada:
+        // 0 -> 5 Maiores (J2)
+        // 1 -> 10 Maiores (J3)
+        // 2 -> 15 Maiores (J4)
+        // 3 -> 20 Maiores (J5)
+        // 4 -> 25 Maiores (J6)
+        // 5 -> 30 Maiores (J7)
+        // 6 -> Restante (J8)
+        // 7 -> Ibovespa (J9)
+        const finalVals = extracted.map(v => (typeof v === 'number' ? Math.round(v * 100) / 100 : null));
+
+        weightsMap = {
+          soma5Raw: finalVals[0] !== null ? finalVals[0] : 0,
+          soma10Raw: finalVals[1] !== null ? finalVals[1] : 0,
+          soma15Raw: finalVals[2] !== null ? finalVals[2] : 0,
+          soma20Raw: finalVals[3] !== null ? finalVals[3] : 0,
+          soma25Raw: finalVals[4] !== null ? finalVals[4] : 0,
+          soma30Raw: finalVals[5] !== null ? finalVals[5] : 0,
+          somaRestanteRaw: finalVals[6] !== null ? finalVals[6] : (100 - (finalVals[5] || 0)),
+          somaIbovRaw: finalVals[7] !== null ? finalVals[7] : 100
+        };
+
+        // Para compatibilidade, manter weightsData vazio (não usamos para somas agora)
+        weightsData = [];
+
+        console.log('weightsMap lido:', weightsMap);
+
       } catch (error) {
         console.error('Erro ao processar dados de pesos CSV:', error);
-        // Resetar valores em caso de erro
-        peso5 = 0;
-        peso10 = 0;
-        peso15 = 0;
-        peso20 = 0;
-        peso25 = 0;
-        peso30 = 0;
-        pesoRestante = 0;
-        pesoIbovespa = 100;
+        weightsData = [];
+        weightsMap = null;
       }
     }
 
@@ -1103,148 +1095,89 @@
       return percentageData;
     }
     
-    function updateContributionsTable() {
-      if (filteredData.length < 2) {
-        document.getElementById('tableContainer1').style.display = 'none';
-        document.getElementById('tableContainer2').style.display = 'none';
-        document.getElementById('tableContainer3').style.display = 'none';
-        document.getElementById('tableTitle1').style.display = 'none';
-        document.getElementById('tableTitle2').style.display = 'none';
-        document.getElementById('tableTitle3').style.display = 'none';
-        return;
+    // Função para calcular os pesos dos grupos - usa weightsMap (J2..J9) quando disponível
+    function calculateGroupWeights() {
+      // Se weightsMap estiver presente, usar diretamente
+      if (weightsMap && typeof weightsMap.soma5Raw === 'number') {
+        const soma5 = weightsMap.soma5Raw;
+        const soma10 = weightsMap.soma10Raw;
+        const soma15 = weightsMap.soma15Raw;
+        const soma20 = weightsMap.soma20Raw;
+        const soma25 = weightsMap.soma25Raw;
+        const soma30 = weightsMap.soma30Raw;
+        const somaRest = weightsMap.somaRestanteRaw;
+        const somaIbov = weightsMap.somaIbovRaw;
+
+        const peso5Pct = Math.round((soma5 / 100) * 10000) / 10000;
+        const peso10Pct = Math.round((soma10 / 100) * 10000) / 10000;
+        const peso15Pct = Math.round((soma15 / 100) * 10000) / 10000;
+        const peso20Pct = Math.round((soma20 / 100) * 10000) / 10000;
+        const peso25Pct = Math.round((soma25 / 100) * 10000) / 10000;
+        const peso30Pct = Math.round((soma30 / 100) * 10000) / 10000;
+        const pesoRestantePct = Math.round((somaRest / 100) * 10000) / 10000;
+        const pesoIbovPct = (typeof somaIbov === 'number') ? Math.round((somaIbov / 100) * 10000) / 10000 : 1;
+
+        const pesoRestanteRaw = Math.round(somaRest * 100) / 100;
+
+        return {
+          soma5Raw: Math.round(soma5 * 100) / 100,
+          soma10Raw: Math.round(soma10 * 100) / 100,
+          soma15Raw: Math.round(soma15 * 100) / 100,
+          soma20Raw: Math.round(soma20 * 100) / 100,
+          soma25Raw: Math.round(soma25 * 100) / 100,
+          soma30Raw: Math.round(soma30 * 100) / 100,
+          somaRestanteRaw: pesoRestanteRaw,
+          peso5Pct,
+          peso10Pct,
+          peso15Pct,
+          peso20Pct,
+          peso25Pct,
+          peso30Pct,
+          pesoRestantePct,
+          pesoIbovPct
+        };
+      }
+
+      // Fallback: comportamento anterior (somar primeiro 30 pesos de weightsData)
+      const paddedWeights = [];
+      for (let i = 0; i < 30; i++) {
+        paddedWeights.push(weightsData[i] || 0);
       }
       
-      const valorInicialIbovespa = filteredData[0].value;
-      const valorFinalIbovespa = filteredData[filteredData.length - 1].value;
-      const variacaoIbovespa = valorFinalIbovespa - valorInicialIbovespa;
-      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
+      const soma5 = paddedWeights.slice(0,5).reduce((a,b)=>a+b,0);
+      const soma10 = paddedWeights.slice(0,10).reduce((a,b)=>a+b,0);
+      const soma15 = paddedWeights.slice(0,15).reduce((a,b)=>a+b,0);
+      const soma20 = paddedWeights.slice(0,20).reduce((a,b)=>a+b,0);
+      const soma25 = paddedWeights.slice(0,25).reduce((a,b)=>a+b,0);
+      const soma30 = paddedWeights.slice(0,30).reduce((a,b)=>a+b,0);
       
-      if (variacaoIbovespa === 0) {
-        document.getElementById('tableContainer1').style.display = 'none';
-        document.getElementById('tableContainer2').style.display = 'none';
-        document.getElementById('tableContainer3').style.display = 'none';
-        document.getElementById('tableTitle1').style.display = 'none';
-        document.getElementById('tableTitle2').style.display = 'none';
-        document.getElementById('tableTitle3').style.display = 'none';
-        return;
-      }
+      const peso5Pct = Math.round((soma5 / 100) * 10000) / 10000;
+      const peso10Pct = Math.round((soma10 / 100) * 10000) / 10000;
+      const peso15Pct = Math.round((soma15 / 100) * 10000) / 10000;
+      const peso20Pct = Math.round((soma20 / 100) * 10000) / 10000;
+      const peso25Pct = Math.round((soma25 / 100) * 10000) / 10000;
+      const peso30Pct = Math.round((soma30 / 100) * 10000) / 10000;
       
-      const grupos = [
-        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, peso: isNaN(peso5) ? 0 : peso5 },
-        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, peso: isNaN(peso10) ? 0 : peso10 },
-        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, peso: isNaN(peso15) ? 0 : peso15 },
-        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, peso: isNaN(peso20) ? 0 : peso20 },
-        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, peso: isNaN(peso25) ? 0 : peso25 },
-        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, peso: isNaN(peso30) ? 0 : peso30 }
-      ];
+      const pesoRestanteRaw = Math.round((100 - soma30) * 100) / 100;
+      const pesoRestantePct = Math.round(((100 - soma30) / 100) * 10000) / 10000;
       
-      for (let tableNum = 1; tableNum <= 3; tableNum++) {
-        const tableBody = document.getElementById(`contributionsTableBody${tableNum}`);
-        tableBody.innerHTML = '';
-        
-        let contribuicao30Maiores = 0;
-        let variacao30Maiores = 0;
-        
-        grupos.forEach(grupo => {
-          let somaEmpresas = 0;
-          
-          for (let i = 1; i < filteredData.length; i++) {
-            const registro = filteredData[i];
-            if (registro.empresas && registro.empresas.length > 0) {
-              for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
-                somaEmpresas += registro.empresas[j] || 0;
-              }
-            }
-          }
-          
-          const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
-          const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
-          
-          if (grupo.nome === "30 Maiores Empresas") {
-            contribuicao30Maiores = contribuicaoPercentual;
-            variacao30Maiores = variacaoPercentual;
-          }
-          
-          const variacaoFormatada = variacaoPercentual.toFixed(2);
-          const contribuicaoFormatada = contribuicaoPercentual.toFixed(2);
-          
-          // Usar o peso direto da planilha (células J2-J7)
-          const pesoAtualExibicao = `${grupo.peso.toFixed(2)}%`;
-          
-          const sinalVariacao = variacaoPercentual >= 0 ? '+' : '';
-          const sinalContribuicao = contribuicaoPercentual >= 0 ? '+' : '';
-          
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="group-cell">${grupo.nome}</td>
-            <td class="value-cell" style="color: ${variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-              ${sinalVariacao}${variacaoFormatada}%
-            </td>
-            <td class="value-cell" style="color: ${contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-              ${sinalContribuicao}${contribuicaoFormatada}%
-            </td>
-            <td class="value-cell" style="color: #1E4DB7">
-              ${pesoAtualExibicao}
-            </td>
-          `;
-          
-          tableBody.appendChild(row);
-        });
-        
-        // Restante -> 100 - soma30Raw
-        const contribuicaoRestante = 100 - contribuicao30Maiores;
-        const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
-        const restanteFormatado = contribuicaoRestante.toFixed(2);
-        const variacaoRestanteFormatada = variacaoRestante.toFixed(2);
-        const sinalRestante = contribuicaoRestante >= 0 ? '+' : '';
-        const sinalVariacaoRestante = variacaoRestante >= 0 ? '+' : '';
-        
-        // Peso do restante: célula J8
-        const restantePesoExibe = `${(isNaN(pesoRestante) ? 0 : pesoRestante).toFixed(2)}%`;
-        
-        const restanteRow = document.createElement('tr');
-        restanteRow.innerHTML = `
-          <td class="group-cell">Restante</td>
-          <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
-            ${sinalVariacaoRestante}${variacaoRestanteFormatada}%
-          </td>
-          <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
-            ${sinalRestante}${restanteFormatado}%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7">
-            ${restantePesoExibe}
-          </td>
-        `;
-        
-        tableBody.appendChild(restanteRow);
-        
-        const ibovespaVariacaoFormatada = variacaoPercentualIbovespa.toFixed(2);
-        const sinalIbovespa = variacaoPercentualIbovespa >= 0 ? '+' : '';
-        
-        // Peso do Ibovespa: célula J9 (deve ser 100%)
-        const ibovespaPesoExibe = `${(isNaN(pesoIbovespa) ? 100 : pesoIbovespa).toFixed(2)}%`;
-        
-        const ibovespaRow = document.createElement('tr');
-        ibovespaRow.style.backgroundColor = '#f0f5ff';
-        ibovespaRow.style.fontWeight = 'bold';
-        ibovespaRow.innerHTML = `
-          <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
-          <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-            ${sinalIbovespa}${ibovespaVariacaoFormatada}%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-            100.00%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-            ${ibovespaPesoExibe}
-          </td>
-        `;
-        
-        tableBody.appendChild(ibovespaRow);
-        
-        document.getElementById(`tableContainer${tableNum}`).style.display = 'block';
-        document.getElementById(`tableTitle${tableNum}`).style.display = 'block';
-      }
+      return {
+        soma5Raw: Math.round(soma5 * 100) / 100,
+        soma10Raw: Math.round(soma10 * 100) / 100,
+        soma15Raw: Math.round(soma15 * 100) / 100,
+        soma20Raw: Math.round(soma20 * 100) / 100,
+        soma25Raw: Math.round(soma25 * 100) / 100,
+        soma30Raw: Math.round(soma30 * 100) / 100,
+        somaRestanteRaw: pesoRestanteRaw,
+        peso5Pct,
+        peso10Pct,
+        peso15Pct,
+        peso20Pct,
+        peso25Pct,
+        peso30Pct,
+        pesoRestantePct,
+        pesoIbovPct: 1
+      };
     }
     
     function createMainChart() {
@@ -1430,6 +1363,150 @@
       ibovespaChart.update();
     }
     
+    function updateContributionsTable() {
+      if (filteredData.length < 2) {
+        document.getElementById('tableContainer1').style.display = 'none';
+        document.getElementById('tableContainer2').style.display = 'none';
+        document.getElementById('tableContainer3').style.display = 'none';
+        document.getElementById('tableTitle1').style.display = 'none';
+        document.getElementById('tableTitle2').style.display = 'none';
+        document.getElementById('tableTitle3').style.display = 'none';
+        return;
+      }
+      
+      const valorInicialIbovespa = filteredData[0].value;
+      const valorFinalIbovespa = filteredData[filteredData.length - 1].value;
+      const variacaoIbovespa = valorFinalIbovespa - valorInicialIbovespa;
+      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
+      
+      if (variacaoIbovespa === 0) {
+        document.getElementById('tableContainer1').style.display = 'none';
+        document.getElementById('tableContainer2').style.display = 'none';
+        document.getElementById('tableContainer3').style.display = 'none';
+        document.getElementById('tableTitle1').style.display = 'none';
+        document.getElementById('tableTitle2').style.display = 'none';
+        document.getElementById('tableTitle3').style.display = 'none';
+        return;
+      }
+      
+      const pesos = calculateGroupWeights();
+      
+      const grupos = [
+        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, pesoRaw: pesos.soma5Raw, pesoPct: pesos.peso5Pct },
+        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, pesoRaw: pesos.soma10Raw, pesoPct: pesos.peso10Pct },
+        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, pesoRaw: pesos.soma15Raw, pesoPct: pesos.peso15Pct },
+        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, pesoRaw: pesos.soma20Raw, pesoPct: pesos.peso20Pct },
+        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, pesoRaw: pesos.soma25Raw, pesoPct: pesos.peso25Pct },
+        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, pesoRaw: pesos.soma30Raw, pesoPct: pesos.peso30Pct }
+      ];
+      
+      for (let tableNum = 1; tableNum <= 3; tableNum++) {
+        const tableBody = document.getElementById(`contributionsTableBody${tableNum}`);
+        tableBody.innerHTML = '';
+        
+        let contribuicao30Maiores = 0;
+        let variacao30Maiores = 0;
+        
+        grupos.forEach(grupo => {
+          let somaEmpresas = 0;
+          
+          for (let i = 1; i < filteredData.length; i++) {
+            const registro = filteredData[i];
+            if (registro.empresas && registro.empresas.length > 0) {
+              for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
+                somaEmpresas += registro.empresas[j] || 0;
+              }
+            }
+          }
+          
+          const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
+          const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
+          
+          if (grupo.nome === "30 Maiores Empresas") {
+            contribuicao30Maiores = contribuicaoPercentual;
+            variacao30Maiores = variacaoPercentual;
+          }
+          
+          const variacaoFormatada = variacaoPercentual.toFixed(2);
+          const contribuicaoFormatada = contribuicaoPercentual.toFixed(2);
+          
+          // Quarta coluna: peso atual vindo da planilha "Pesos" -> soma C2..C(N) dividido por 100 (ex.: soma = 40.12 -> frac = 0.4012)
+          // Aqui exibimos o valor bruto em % (como solicitado: J2..J7 são percentuais já)
+          const pesoAtualExibicao = (typeof grupo.pesoRaw === 'number') ? `${grupo.pesoRaw.toFixed(2)}%` : '0.00%';
+          
+          const sinalVariacao = variacaoPercentual >= 0 ? '+' : '';
+          const sinalContribuicao = contribuicaoPercentual >= 0 ? '+' : '';
+          
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="group-cell">${grupo.nome}</td>
+            <td class="value-cell" style="color: ${variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+              ${sinalVariacao}${variacaoFormatada}%
+            </td>
+            <td class="value-cell" style="color: ${contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+              ${sinalContribuicao}${contribuicaoFormatada}%
+            </td>
+            <td class="value-cell" style="color: #1E4DB7">
+              ${pesoAtualExibicao}
+            </td>
+          `;
+          
+          tableBody.appendChild(row);
+        });
+        
+        // Restante -> 100 - soma30Raw (ou vindo de pesosMap)
+        const contribuicaoRestante = 100 - contribuicao30Maiores;
+        const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
+        const restanteFormatado = contribuicaoRestante.toFixed(2);
+        const variacaoRestanteFormatada = variacaoRestante.toFixed(2);
+        const sinalRestante = contribuicaoRestante >= 0 ? '+' : '';
+        const sinalVariacaoRestante = variacaoRestante >= 0 ? '+' : '';
+        
+        const restantePesoRaw = (typeof pesos.soma30Raw === 'number') ? (100 - pesos.soma30Raw) : 0;
+        const restantePesoExibe = `${restantePesoRaw.toFixed(2)}%`;
+        
+        const restanteRow = document.createElement('tr');
+        restanteRow.innerHTML = `
+          <td class="group-cell">Restante</td>
+          <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
+            ${sinalVariacaoRestante}${variacaoRestanteFormatada}%
+          </td>
+          <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
+            ${sinalRestante}${restanteFormatado}%
+          </td>
+          <td class="value-cell" style="color: #1E4DB7">
+            ${restantePesoExibe}
+          </td>
+        `;
+        
+        tableBody.appendChild(restanteRow);
+        
+        const ibovespaVariacaoFormatada = variacaoPercentualIbovespa.toFixed(2);
+        const sinalIbovespa = variacaoPercentualIbovespa >= 0 ? '+' : '';
+        
+        const ibovespaRow = document.createElement('tr');
+        ibovespaRow.style.backgroundColor = '#f0f5ff';
+        ibovespaRow.style.fontWeight = 'bold';
+        ibovespaRow.innerHTML = `
+          <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
+          <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
+            ${sinalIbovespa}${ibovespaVariacaoFormatada}%
+          </td>
+          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+            100.00%
+          </td>
+          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+            100.00%
+          </td>
+        `;
+        
+        tableBody.appendChild(ibovespaRow);
+        
+        document.getElementById(`tableContainer${tableNum}`).style.display = 'block';
+        document.getElementById(`tableTitle${tableNum}`).style.display = 'block';
+      }
+    }
+    
     function setupPeriodButtons() {
       const buttons = document.querySelectorAll('.period-btn');
       buttons.forEach(btn => {
@@ -1556,15 +1633,8 @@
       const lastRecord = allIbovespaData[allIbovespaData.length - 1];
       document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
       
-      // Valores de exemplo para os pesos
-      peso5 = 20.5;
-      peso10 = 35.2;
-      peso15 = 45.8;
-      peso20 = 55.3;
-      peso25 = 62.7;
-      peso30 = 68.9;
-      pesoRestante = 31.1;
-      pesoIbovespa = 100;
+      weightsData = []; // Limpar pesos de exemplo
+      weightsMap = null;
       
       setupDateInputs();
       
