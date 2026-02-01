@@ -13,7 +13,6 @@
       color: #000;
       height: 100%;
       overflow-y: auto;
-      overflow-x: hidden;
     }
 
     .container {
@@ -30,7 +29,6 @@
       max-width: 1200px;
       text-align: center;
       margin-bottom: 25px;
-      flex-shrink: 0;
     }
 
     .header-info h1 {
@@ -81,7 +79,6 @@
       gap: 10px;
       margin-top: 20px;
       width: 100%;
-      flex-shrink: 0;
       flex-wrap: wrap;
     }
 
@@ -189,7 +186,6 @@
       text-align: center;
     }
 
-    /* ESTILOS DO TOOLTIP PERSONALIZADO */
     .custom-tooltip {
       position: absolute;
       background: rgba(255, 255, 255, 0.95);
@@ -225,30 +221,6 @@
       border-color: #164CAD transparent transparent transparent;
     }
 
-    .custom-tooltip.bottom::before {
-      top: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 0 8px 8px 8px;
-      border-color: transparent transparent #164CAD transparent;
-    }
-
-    .custom-tooltip.left::before {
-      right: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-      border-width: 8px 0 8px 8px;
-      border-color: transparent transparent transparent #164CAD;
-    }
-
-    .custom-tooltip.right::before {
-      left: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-      border-width: 8px 8px 8px 0;
-      border-color: transparent #164CAD transparent transparent;
-    }
-
     .tooltip-header {
       font-weight: 550;
       color: #000;
@@ -264,10 +236,6 @@
       align-items: center;
       margin-bottom: 6px;
       font-size: 13px;
-    }
-
-    .tooltip-item:last-child {
-      margin-bottom: 0;
     }
 
     .tooltip-label {
@@ -290,7 +258,6 @@
       margin-left: 12px;
     }
 
-    /* CONTAINER PARA AS TRÊS TABELAS */
     .tables-wrapper {
       width: 95%;
       max-width: 1400px;
@@ -301,7 +268,6 @@
       justify-content: space-between;
     }
 
-    /* ESTILOS DA TABELA - CORRIGIDOS SEM SCROLL HORIZONTAL */
     .table-container {
       width: 100%;
       border-radius: 8px;
@@ -315,7 +281,7 @@
       border-collapse: collapse;
       font-family: "Montserrat", sans-serif;
       font-size: 13px;
-      table-layout: fixed; /* Garante largura fixa das colunas */
+      table-layout: fixed;
     }
 
     .contributions-table th {
@@ -324,9 +290,9 @@
       font-weight: 500;
       text-align: center;
       padding: 12px 8px;
-      white-space: normal; /* Permite quebra de linha apenas em espaços */
-      word-break: normal;   /* Não quebra palavras no meio */
-      overflow-wrap: normal; /* Não força quebra dentro da palavra */
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: normal;
       line-height: 1.2;
     }
 
@@ -357,25 +323,24 @@
       font-family: "DM Sans", sans-serif;
     }
 
-    /* Largura das colunas - ajustada para 4 colunas */
     .contributions-table th:nth-child(1),
     .contributions-table td:nth-child(1) {
-      width: 35%; /* Grupo de Empresas */
+      width: 35%;
     }
 
     .contributions-table th:nth-child(2),
     .contributions-table td:nth-child(2) {
-      width: 20%; /* Variação (%) */
+      width: 20%;
     }
 
     .contributions-table th:nth-child(3),
     .contributions-table td:nth-child(3) {
-      width: 20%; /* Contribuição (%) */
+      width: 20%;
     }
 
     .contributions-table th:nth-child(4),
     .contributions-table td:nth-child(4) {
-      width: 25%; /* Peso Atual (%) */
+      width: 25%;
     }
 
     .table-title {
@@ -390,14 +355,12 @@
       display: none;
     }
 
-    /* Container para título + tabela */
     .table-section {
-      width: 32%; /* Cada tabela ocupa aproximadamente 1/3 do espaço */
+      width: 32%;
       display: flex;
       flex-direction: column;
     }
 
-    /* Responsividade para telas menores */
     @media (max-width: 1300px) {
       .tables-wrapper {
         flex-wrap: wrap;
@@ -417,7 +380,6 @@
       
       .period-controls {
         flex-direction: column;
-        align-items: center;
       }
       
       .custom-range-container {
@@ -466,13 +428,9 @@
       <div class="loading" id="loadingIndicator">Carregando gráfico...</div>
     </div>
 
-    <!-- WRAPPER PARA AS TRÊS TABELAS -->
     <div class="tables-wrapper" id="tablesWrapper">
-      <!-- Tabela 1 -->
       <div class="table-section">
-        <div class="table-title" id="tableTitle1">
-          Maiores empresas
-        </div>
+        <div class="table-title" id="tableTitle1">Maiores empresas</div>
         <div class="table-container" id="tableContainer1">
           <table class="contributions-table">
             <thead>
@@ -483,18 +441,13 @@
                 <th>Peso Atual<br>(%)</th>
               </tr>
             </thead>
-            <tbody id="contributionsTableBody1">
-              <!-- As linhas serão preenchidas via JavaScript -->
-            </tbody>
+            <tbody id="contributionsTableBody1"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Tabela 2 -->
       <div class="table-section">
-        <div class="table-title" id="tableTitle2">
-          Maiores contribuições - Ações
-        </div>
+        <div class="table-title" id="tableTitle2">Maiores contribuições - Ações</div>
         <div class="table-container" id="tableContainer2">
           <table class="contributions-table">
             <thead>
@@ -505,18 +458,13 @@
                 <th>Peso Atual<br>(%)</th>
               </tr>
             </thead>
-            <tbody id="contributionsTableBody2">
-              <!-- As linhas serão preenchidas via JavaScript -->
-            </tbody>
+            <tbody id="contributionsTableBody2"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Tabela 3 -->
       <div class="table-section">
-        <div class="table-title" id="tableTitle3">
-          Maiores contribuições - Setores
-        </div>
+        <div class="table-title" id="tableTitle3">Maiores contribuições - Setores</div>
         <div class="table-container" id="tableContainer3">
           <table class="contributions-table">
             <thead>
@@ -527,9 +475,7 @@
                 <th>Peso Atual<br>(%)</th>
               </tr>
             </thead>
-            <tbody id="contributionsTableBody3">
-              <!-- As linhas serão preenchidas via JavaScript -->
-            </tbody>
+            <tbody id="contributionsTableBody3"></tbody>
           </table>
         </div>
       </div>
@@ -539,20 +485,14 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script>
-    // URL da planilha pública do Google Sheets (Ibovespa)
     const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
     
-    // Variáveis globais
     let ibovespaChart = null;
     let allIbovespaData = [];
     let filteredData = [];
-    let percentData = [];
-    let weightsMap = null; // Mapa com valores lidos das células KW2..KW7
+    let weightsMap = null;
     
-    // Data mínima permitida (30/12/2024)
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
-    
-    // Tooltip personalizado
     let customTooltip = null;
 
     function createCustomTooltip() {
@@ -574,29 +514,25 @@
 
       if (tooltip.body) {
         const title = tooltip.title[0] || '';
-        
         let tooltipHTML = `<div class="tooltip-header">${title}</div>`;
         
-        tooltip.dataPoints.forEach((dataPoint, index) => {
+        tooltip.dataPoints.forEach((dataPoint) => {
           const dataset = chart.data.datasets[dataPoint.datasetIndex];
-          
           const pointIndex = dataPoint.dataIndex;
           const originalValue = filteredData[pointIndex]?.value || 0;
           const percentValue = dataPoint.raw.y;
-          
-          const label = dataset.label || 'Ibovespa';
           const color = dataset.borderColor || '#164CAD';
           
           tooltipHTML += `
             <div class="tooltip-item">
               <span class="tooltip-label">
                 <span class="tooltip-color" style="background-color: ${color}"></span>
-                ${label}
+                ${dataset.label || 'Ibovespa'}
               </span>
             </div>
             <div class="tooltip-item">
               <span class="tooltip-label">Variação:</span>
-              <span class="tooltip-value" style="color: ${percentValue >= 0 ? '#008000' : '#ff0000'};">
+              <span class="tooltip-value" style="color: ${percentValue >= 0 ? '#008000' : '#ff0000'}">
                 ${percentValue >= 0 ? '+' : ''}${percentValue.toFixed(2)}%
               </span>
             </div>
@@ -620,10 +556,7 @@
       const tooltipWidth = tooltipEl.offsetWidth;
       const tooltipHeight = tooltipEl.offsetHeight;
       
-      let placement = 'top';
-      
       if (top - tooltipHeight - 10 < 0) {
-        placement = 'bottom';
         top += 20;
       } else {
         top -= tooltipHeight + 10;
@@ -640,71 +573,50 @@
       tooltipEl.style.left = left + 'px';
       tooltipEl.style.top = top + 'px';
       
-      tooltipEl.className = `custom-tooltip ${placement} visible`;
+      tooltipEl.className = 'custom-tooltip top visible';
     }
 
-    // Função para buscar dados da planilha
     async function loadIbovespaData() {
       try {
-        console.log('Iniciando busca de dados do Ibovespa...');
         document.getElementById('subtitle').textContent = 'Carregando dados da planilha...';
         
         const response = await fetch(SPREADSHEET_URL);
         
-        if (!response.ok) {
-          throw new Error(`Erro HTTP: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
         
         const csvText = await response.text();
-        console.log('Dados CSV recebidos, processando...');
-        
         processCSVData(csvText);
         
       } catch (error) {
-        console.error('Erro ao buscar dados:', error);
         document.getElementById('subtitle').textContent = 'Erro ao carregar dados da planilha';
         document.getElementById('loadingIndicator').textContent = `Erro: ${error.message}`;
         document.getElementById('loadingIndicator').className = "error";
-        
         loadSampleData();
       }
     }
 
-    // Função para buscar dados dos pesos - usando a mesma URL da planilha principal
     async function loadWeightsData() {
       try {
-        console.log('Iniciando busca de dados dos pesos...');
-        
         const response = await fetch(SPREADSHEET_URL);
-        
-        if (!response.ok) {
-          throw new Error(`Erro HTTP: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
         
         const csvText = await response.text();
-        console.log('Dados de pesos CSV recebidos');
-        
         processWeightsCSVData(csvText);
         
       } catch (error) {
-        console.error('Erro ao buscar dados dos pesos:', error);
         weightsMap = null;
       }
     }
 
-    // Função para processar dados CSV de pesos - seguindo exatamente seu exemplo
     function processWeightsCSVData(csvText) {
       try {
-        // Dividir linhas e colunas como no seu exemplo
         const linhas = csvText.split("\n").map(l => {
-          // Processar a linha para lidar com vírgulas dentro de aspas
           let result = [];
           let current = '';
           let inQuotes = false;
           
           for (let i = 0; i < l.length; i++) {
             const char = l[i];
-            
             if (char === '"') {
               inQuotes = !inQuotes;
             } else if (char === ',' && !inQuotes) {
@@ -719,9 +631,8 @@
           return result;
         });
         
-        const colunaKW = 308; // Índice da coluna KW (0-based)
+        const colunaKW = 308;
         
-        // Mapear as linhas 2 a 7 (índices 1 a 6)
         const dados = {
           soma5Raw: linhas[1] && linhas[1][colunaKW] ? parseWeightValue(linhas[1][colunaKW]) : 0,
           soma10Raw: linhas[2] && linhas[2][colunaKW] ? parseWeightValue(linhas[2][colunaKW]) : 0,
@@ -731,66 +642,42 @@
           soma30Raw: linhas[6] && linhas[6][colunaKW] ? parseWeightValue(linhas[6][colunaKW]) : 0
         };
         
-        // Garantir que todos os valores sejam números
         Object.keys(dados).forEach(key => {
           if (typeof dados[key] !== 'number' || isNaN(dados[key])) {
             dados[key] = 0;
           }
         });
         
-        // Calcular o restante
         dados.somaRestanteRaw = 100 - dados.soma30Raw;
-        dados.somaIbovRaw = 100;
-        
         weightsMap = dados;
-        
-        console.log('weightsMap lido (KW2..KW7):', weightsMap);
-        console.log('Valores específicos:');
-        console.log('5 Maiores:', weightsMap.soma5Raw);
-        console.log('10 Maiores:', weightsMap.soma10Raw);
-        console.log('15 Maiores:', weightsMap.soma15Raw);
-        console.log('20 Maiores:', weightsMap.soma20Raw);
-        console.log('25 Maiores:', weightsMap.soma25Raw);
-        console.log('30 Maiores:', weightsMap.soma30Raw);
-        console.log('Restante:', weightsMap.somaRestanteRaw);
 
       } catch (error) {
-        console.error('Erro ao processar dados de pesos CSV:', error);
         weightsMap = null;
       }
     }
     
-    // Função auxiliar para parsear valores de peso
     function parseWeightValue(value) {
       if (!value) return 0;
       
-      // Remover aspas e espaços
       let cleanValue = value.toString().replace(/"/g, '').trim();
       
-      // Se já for um número, retornar
       if (!isNaN(cleanValue) && cleanValue !== '') {
         return parseFloat(cleanValue);
       }
       
-      // Tentar diferentes formatos
-      // Formato com vírgula decimal (ex: "45,12")
       if (cleanValue.includes(',')) {
-        // Remover pontos de milhar e substituir vírgula decimal por ponto
         cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
         const num = parseFloat(cleanValue);
         return isNaN(num) ? 0 : num;
       }
       
-      // Formato com ponto decimal (ex: "45.12")
       const num = parseFloat(cleanValue);
       return isNaN(num) ? 0 : num;
     }
 
-    // Função para processar dados CSV
     function processCSVData(csvText) {
       try {
         const lines = csvText.split('\n');
-        
         allIbovespaData = [];
         
         let startIndex = -1;
@@ -811,26 +698,14 @@
           }
         }
         
-        if (startIndex === -1) {
-          startIndex = 1;
-        }
-        
-        console.log(`Iniciando processamento a partir da linha ${startIndex + 1}`);
+        if (startIndex === -1) startIndex = 1;
         
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i].trim();
           
-          if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) {
-            continue;
-          }
+          if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) continue;
           
-          let columns;
-          
-          if (line.includes('"')) {
-            columns = parseCSVLine(line);
-          } else {
-            columns = line.split(',');
-          }
+          let columns = parseCSVLine(line);
           
           if (columns.length >= 2) {
             const dateStr = columns[0].trim().replace(/"/g, '');
@@ -841,28 +716,19 @@
               if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
                 const parts = dateStr.split('/');
                 date = new Date(parts[2], parts[1] - 1, parts[0]);
-              } else if (dateStr.match(/\d{4}-\d{1,2}-\d{1,2}/)) {
-                date = new Date(dateStr);
               } else {
                 date = new Date(dateStr);
               }
               
-              if (isNaN(date.getTime())) {
-                console.warn(`Data inválida na linha ${i + 1}: ${dateStr}`);
-                continue;
-              }
+              if (isNaN(date.getTime())) continue;
             } catch (e) {
-              console.warn(`Erro ao processar data na linha ${i + 1}: ${dateStr}`, e);
               continue;
             }
             
             const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
             const value = parseFloat(cleanedValue);
             
-            if (isNaN(value) || value <= 0) {
-              console.warn(`Valor inválido na linha ${i + 1}: ${valueStr}`);
-              continue;
-            }
+            if (isNaN(value) || value <= 0) continue;
             
             const empresas = [];
             for (let col = 3; col <= 32 && col < columns.length; col++) {
@@ -881,41 +747,28 @@
           }
         }
         
-        console.log(`Processados ${allIbovespaData.length} registros válidos.`);
-        
-        if (allIbovespaData.length === 0) {
-          throw new Error('Nenhum dado válido encontrado na planilha.');
-        }
+        if (allIbovespaData.length === 0) throw new Error('Nenhum dado válido encontrado.');
         
         allIbovespaData.sort((a, b) => a.date - b.date);
         
         const lastRecord = allIbovespaData[allIbovespaData.length - 1];
         document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
         
-        // Carregar dados dos pesos
         loadWeightsData().then(() => {
           setupDateInputs();
-          
           document.getElementById('periodControls').style.display = 'flex';
           document.getElementById('loadingIndicator').style.display = 'none';
-          
           createMainChart();
-          
           filterDataByMonths(1);
-          
           setupPeriodButtons();
-          
           setupCustomRangeButton();
-          
           setupDateValidation();
         });
         
       } catch (error) {
-        console.error('Erro ao processar dados CSV:', error);
         document.getElementById('subtitle').textContent = 'Erro ao processar dados da planilha';
         document.getElementById('loadingIndicator').textContent = `Erro: ${error.message}`;
         document.getElementById('loadingIndicator').className = "error";
-        
         loadSampleData();
       }
     }
@@ -955,20 +808,12 @@
       const startDateError = document.getElementById('startDateError');
       const endDateError = document.getElementById('endDateError');
       
-      const formatDateBR = (date) => {
-        return date.toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        });
-      };
-      
       startDateInput.addEventListener('change', function() {
         const selectedDate = new Date(this.value);
         const minAllowedDate = MIN_ALLOWED_DATE;
         
         if (selectedDate < minAllowedDate) {
-          startDateError.textContent = `Menor data disponível 30/12/2024`;
+          startDateError.textContent = 'Menor data disponível 30/12/2024';
           startDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
@@ -987,7 +832,7 @@
         const minAllowedDate = MIN_ALLOWED_DATE;
         
         if (selectedDate < minAllowedDate) {
-          endDateError.textContent = `Menor data disponível 30/12/2024`;
+          endDateError.textContent = 'Menor data disponível 30/12/2024';
           endDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
@@ -998,25 +843,11 @@
           if (startDate > selectedDate) {
             startDateInput.value = this.value;
             if (startDate < minAllowedDate) {
-              startDateError.textContent = `Menor data disponível ${formatDateBR(minAllowedDate)}`;
+              startDateError.textContent = 'Menor data disponível 30/12/2024';
               startDateError.style.display = 'block';
               startDateInput.style.borderColor = '#ff0000';
             }
           }
-        }
-      });
-      
-      startDateInput.addEventListener('blur', function() {
-        if (this.value) {
-          const event = new Event('change');
-          this.dispatchEvent(event);
-        }
-      });
-      
-      endDateInput.addEventListener('blur', function() {
-        if (this.value) {
-          const event = new Event('change');
-          this.dispatchEvent(event);
         }
       });
     }
@@ -1028,7 +859,6 @@
       
       for (let i = 0; i < line.length; i++) {
         const char = line[i];
-        
         if (char === '"') {
           inQuotes = !inQuotes;
         } else if (char === ',' && !inQuotes) {
@@ -1047,24 +877,13 @@
       if (!originalData || originalData.length === 0) return [];
       
       const firstValue = originalData[0].value;
-      const percentageData = [];
-      
-      for (let i = 0; i < originalData.length; i++) {
-        const item = originalData[i];
-        const percentage = ((item.value / firstValue) - 1) * 100;
-        
-        percentageData.push({
-          x: item.date,
-          y: percentage
-        });
-      }
-      
-      return percentageData;
+      return originalData.map(item => ({
+        x: item.date,
+        y: ((item.value / firstValue) - 1) * 100
+      }));
     }
     
-    // Função para calcular os pesos dos grupos - usa weightsMap (KW2..KW7) quando disponível
     function calculateGroupWeights() {
-      // Se weightsMap estiver presente, usar diretamente
       if (weightsMap && typeof weightsMap.soma5Raw === 'number') {
         const soma5 = weightsMap.soma5Raw;
         const soma10 = weightsMap.soma10Raw;
@@ -1074,14 +893,6 @@
         const soma30 = weightsMap.soma30Raw;
         const somaRest = weightsMap.somaRestanteRaw;
 
-        const peso5Pct = Math.round((soma5 / 100) * 10000) / 10000;
-        const peso10Pct = Math.round((soma10 / 100) * 10000) / 10000;
-        const peso15Pct = Math.round((soma15 / 100) * 10000) / 10000;
-        const peso20Pct = Math.round((soma20 / 100) * 10000) / 10000;
-        const peso25Pct = Math.round((soma25 / 100) * 10000) / 10000;
-        const peso30Pct = Math.round((soma30 / 100) * 10000) / 10000;
-        const pesoRestantePct = Math.round((somaRest / 100) * 10000) / 10000;
-
         return {
           soma5Raw: Math.round(soma5 * 100) / 100,
           soma10Raw: Math.round(soma10 * 100) / 100,
@@ -1090,18 +901,17 @@
           soma25Raw: Math.round(soma25 * 100) / 100,
           soma30Raw: Math.round(soma30 * 100) / 100,
           somaRestanteRaw: Math.round(somaRest * 100) / 100,
-          peso5Pct,
-          peso10Pct,
-          peso15Pct,
-          peso20Pct,
-          peso25Pct,
-          peso30Pct,
-          pesoRestantePct,
+          peso5Pct: Math.round((soma5 / 100) * 10000) / 10000,
+          peso10Pct: Math.round((soma10 / 100) * 10000) / 10000,
+          peso15Pct: Math.round((soma15 / 100) * 10000) / 10000,
+          peso20Pct: Math.round((soma20 / 100) * 10000) / 10000,
+          peso25Pct: Math.round((soma25 / 100) * 10000) / 10000,
+          peso30Pct: Math.round((soma30 / 100) * 10000) / 10000,
+          pesoRestantePct: Math.round((somaRest / 100) * 10000) / 10000,
           pesoIbovPct: 1
         };
       }
 
-      // Fallback: valores padrão se não conseguir ler da planilha
       return {
         soma5Raw: 0,
         soma10Raw: 0,
@@ -1158,9 +968,7 @@
               backgroundColor: function(context) {
                 const chart = context.chart;
                 const {ctx, chartArea} = chart;
-                if (!chartArea) {
-                  return null;
-                }
+                if (!chartArea) return null;
                 return createGradient(ctx, chartArea);
               },
             },
@@ -1189,9 +997,7 @@
             },
             tooltip: {
               enabled: false,
-              external: (context) => {
-                showCustomTooltip(context.chart, context.tooltip);
-              }
+              external: (context) => showCustomTooltip(context.chart, context.tooltip)
             },
           },
           scales: {
@@ -1199,9 +1005,7 @@
               type: "time",
               time: {
                 unit: "month",
-                displayFormats: { 
-                  month: "MMM - yy" 
-                },
+                displayFormats: { month: "MMM - yy" },
                 tooltipFormat: "dd/MM/yyyy"
               },
               ticks: {
@@ -1213,16 +1017,11 @@
                   size: 12,
                   weight: "300",
                 },
-                callback: function(value, index, values) {
+                callback: function(value) {
                   const date = new Date(value);
                   const month = date.getMonth();
                   const year = date.getFullYear().toString().slice(-2);
-                  
-                  const mesesPortugues = [
-                    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-                    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-                  ];
-                  
+                  const mesesPortugues = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                   return `${mesesPortugues[month]} - ${year}`;
                 }
               },
@@ -1253,8 +1052,6 @@
           },
         },
       });
-      
-      console.log("Gráfico principal do Ibovespa criado com sucesso");
     }
     
     function filterDataByMonths(months) {
@@ -1265,9 +1062,7 @@
       
       filteredData = allIbovespaData.filter(record => record.date >= cutoffDate);
       
-      if (filteredData.length === 0) {
-        filteredData = [...allIbovespaData];
-      }
+      if (filteredData.length === 0) filteredData = [...allIbovespaData];
       
       updateMainChartData();
       updateContributionsTable();
@@ -1297,132 +1092,108 @@
     function updateMainChartData() {
       if (!ibovespaChart || filteredData.length === 0) return;
       
-      const percentageData = convertToPercentageData(filteredData);
-      
-      ibovespaChart.data.datasets[0].data = percentageData;
-      
+      ibovespaChart.data.datasets[0].data = convertToPercentageData(filteredData);
       ibovespaChart.update();
     }
     
     function updateContributionsTable() {
       if (filteredData.length < 2) {
-        document.getElementById('tableContainer1').style.display = 'none';
-        document.getElementById('tableContainer2').style.display = 'none';
-        document.getElementById('tableContainer3').style.display = 'none';
-        document.getElementById('tableTitle1').style.display = 'none';
-        document.getElementById('tableTitle2').style.display = 'none';
-        document.getElementById('tableTitle3').style.display = 'none';
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`tableContainer${i}`).style.display = 'none';
+          document.getElementById(`tableTitle${i}`).style.display = 'none';
+        }
         return;
       }
       
       const valorInicialIbovespa = filteredData[0].value;
       const valorFinalIbovespa = filteredData[filteredData.length - 1].value;
       const variacaoIbovespa = valorFinalIbovespa - valorInicialIbovespa;
-      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
       if (variacaoIbovespa === 0) {
-        document.getElementById('tableContainer1').style.display = 'none';
-        document.getElementById('tableContainer2').style.display = 'none';
-        document.getElementById('tableContainer3').style.display = 'none';
-        document.getElementById('tableTitle1').style.display = 'none';
-        document.getElementById('tableTitle2').style.display = 'none';
-        document.getElementById('tableTitle3').style.display = 'none';
+        for (let i = 1; i <= 3; i++) {
+          document.getElementById(`tableContainer${i}`).style.display = 'none';
+          document.getElementById(`tableTitle${i}`).style.display = 'none';
+        }
         return;
       }
       
       const pesos = calculateGroupWeights();
+      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
       const grupos = [
-        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, pesoRaw: pesos.soma5Raw, pesoPct: pesos.peso5Pct },
-        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, pesoRaw: pesos.soma10Raw, pesoPct: pesos.peso10Pct },
-        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, pesoRaw: pesos.soma15Raw, pesoPct: pesos.peso15Pct },
-        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, pesoRaw: pesos.soma20Raw, pesoPct: pesos.peso20Pct },
-        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, pesoRaw: pesos.soma25Raw, pesoPct: pesos.peso25Pct },
-        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, pesoRaw: pesos.soma30Raw, pesoPct: pesos.peso30Pct }
+        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, pesoRaw: pesos.soma5Raw },
+        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, pesoRaw: pesos.soma10Raw },
+        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, pesoRaw: pesos.soma15Raw },
+        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, pesoRaw: pesos.soma20Raw },
+        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, pesoRaw: pesos.soma25Raw },
+        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, pesoRaw: pesos.soma30Raw }
       ];
+      
+      let contribuicao30Maiores = 0;
+      let variacao30Maiores = 0;
+      
+      grupos.forEach(grupo => {
+        let somaEmpresas = 0;
+        
+        for (let i = 1; i < filteredData.length; i++) {
+          const registro = filteredData[i];
+          if (registro.empresas && registro.empresas.length > 0) {
+            for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
+              somaEmpresas += registro.empresas[j] || 0;
+            }
+          }
+        }
+        
+        const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
+        const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
+        
+        if (grupo.nome === "30 Maiores Empresas") {
+          contribuicao30Maiores = contribuicaoPercentual;
+          variacao30Maiores = variacaoPercentual;
+        }
+        
+        grupo.contribuicao = contribuicaoPercentual;
+        grupo.variacao = variacaoPercentual;
+      });
+      
+      const contribuicaoRestante = 100 - contribuicao30Maiores;
+      const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
       
       for (let tableNum = 1; tableNum <= 3; tableNum++) {
         const tableBody = document.getElementById(`contributionsTableBody${tableNum}`);
         tableBody.innerHTML = '';
         
-        let contribuicao30Maiores = 0;
-        let variacao30Maiores = 0;
-        
         grupos.forEach(grupo => {
-          let somaEmpresas = 0;
-          
-          for (let i = 1; i < filteredData.length; i++) {
-            const registro = filteredData[i];
-            if (registro.empresas && registro.empresas.length > 0) {
-              for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
-                somaEmpresas += registro.empresas[j] || 0;
-              }
-            }
-          }
-          
-          const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
-          const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
-          
-          if (grupo.nome === "30 Maiores Empresas") {
-            contribuicao30Maiores = contribuicaoPercentual;
-            variacao30Maiores = variacaoPercentual;
-          }
-          
-          const variacaoFormatada = variacaoPercentual.toFixed(2);
-          const contribuicaoFormatada = contribuicaoPercentual.toFixed(2);
-          
-          // Quarta coluna: peso atual vindo da planilha "Pesos" -> células KW2..KW7
-          const pesoAtualExibicao = (typeof grupo.pesoRaw === 'number' && grupo.pesoRaw !== 0) ? `${grupo.pesoRaw.toFixed(2)}%` : '0.00%';
-          
-          const sinalVariacao = variacaoPercentual >= 0 ? '+' : '';
-          const sinalContribuicao = contribuicaoPercentual >= 0 ? '+' : '';
-          
           const row = document.createElement('tr');
           row.innerHTML = `
             <td class="group-cell">${grupo.nome}</td>
-            <td class="value-cell" style="color: ${variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-              ${sinalVariacao}${variacaoFormatada}%
+            <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
+              ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
             </td>
-            <td class="value-cell" style="color: ${contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-              ${sinalContribuicao}${contribuicaoFormatada}%
+            <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
+              ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
             </td>
             <td class="value-cell" style="color: #1E4DB7">
-              ${pesoAtualExibicao}
+              ${grupo.pesoRaw.toFixed(2)}%
             </td>
           `;
-          
           tableBody.appendChild(row);
         });
-        
-        // Restante -> 100 - soma30Raw (calculado com base em KW7)
-        const contribuicaoRestante = 100 - contribuicao30Maiores;
-        const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
-        const restanteFormatado = contribuicaoRestante.toFixed(2);
-        const variacaoRestanteFormatada = variacaoRestante.toFixed(2);
-        const sinalRestante = contribuicaoRestante >= 0 ? '+' : '';
-        const sinalVariacaoRestante = variacaoRestante >= 0 ? '+' : '';
-        
-        const restantePesoRaw = pesos.somaRestanteRaw;
-        const restantePesoExibe = `${restantePesoRaw.toFixed(2)}%`;
         
         const restanteRow = document.createElement('tr');
         restanteRow.innerHTML = `
           <td class="group-cell">Restante</td>
           <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
-            ${sinalVariacaoRestante}${variacaoRestanteFormatada}%
+            ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
-            ${sinalRestante}${restanteFormatado}%
+            ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
-            ${restantePesoExibe}
+            ${pesos.somaRestanteRaw.toFixed(2)}%
           </td>
         `;
-        
         tableBody.appendChild(restanteRow);
-        
-        const ibovespaVariacaoFormatada = variacaoPercentualIbovespa.toFixed(2);
-        const sinalIbovespa = variacaoPercentualIbovespa >= 0 ? '+' : '';
         
         const ibovespaRow = document.createElement('tr');
         ibovespaRow.style.backgroundColor = '#f0f5ff';
@@ -1430,7 +1201,7 @@
         ibovespaRow.innerHTML = `
           <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
           <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-            ${sinalIbovespa}${ibovespaVariacaoFormatada}%
+            ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
             100.00%
@@ -1439,7 +1210,6 @@
             100.00%
           </td>
         `;
-        
         tableBody.appendChild(ibovespaRow);
         
         document.getElementById(`tableContainer${tableNum}`).style.display = 'block';
@@ -1452,24 +1222,14 @@
       buttons.forEach(btn => {
         btn.addEventListener('click', function() {
           buttons.forEach(b => b.classList.remove('active'));
-          
           this.classList.add('active');
           
           const period = this.getAttribute('data-period');
-          
           switch(period) {
-            case '1m':
-              filterDataByMonths(1);
-              break;
-            case '3m':
-              filterDataByMonths(3);
-              break;
-            case '6m':
-              filterDataByMonths(6);
-              break;
-            case '1y':
-              filterDataByMonths(12);
-              break;
+            case '1m': filterDataByMonths(1); break;
+            case '3m': filterDataByMonths(3); break;
+            case '6m': filterDataByMonths(6); break;
+            case '1y': filterDataByMonths(12); break;
             case 'all':
               filteredData = [...allIbovespaData];
               updateMainChartData();
@@ -1484,8 +1244,6 @@
       const applyBtn = document.getElementById('applyCustomRange');
       const startDateInput = document.getElementById('startDate');
       const endDateInput = document.getElementById('endDate');
-      const startDateError = document.getElementById('startDateError');
-      const endDateError = document.getElementById('endDateError');
       const periodButtons = document.querySelectorAll('.period-btn');
       
       applyBtn.addEventListener('click', function() {
@@ -1498,23 +1256,9 @@
         }
         
         const minAllowedDate = MIN_ALLOWED_DATE;
-        let hasError = true;
         
-        if (startDate < minAllowedDate) {
-          startDateError.textContent = `Menor data disponível 30/12/2024`;
-          startDateError.style.display = 'block';
-          startDateInput.style.borderColor = '#ff0000';
-          hasError = true;
-        }
-        
-        if (endDate < minAllowedDate) {
-          endDateError.textContent = `Menor data disponível 30/12/2024`;
-          endDateError.style.display = 'block';
-          endDateInput.style.borderColor = '#ff0000';
-          hasError = true;
-        }
-        
-        if (hasError) {
+        if (startDate < minAllowedDate || endDate < minAllowedDate) {
+          alert('Menor data disponível 30/12/2024');
           return;
         }
         
@@ -1542,8 +1286,6 @@
     }
     
     function loadSampleData() {
-      console.log('Carregando dados de exemplo...');
-      
       allIbovespaData = [];
       const startDate = new Date(2023, 0, 1);
       const baseValue = 100000;
@@ -1557,13 +1299,12 @@
         
         const empresas = [];
         for (let j = 0; j < 30; j++) {
-          const empresaValue = 1000 + Math.random() * 4000;
-          empresas.push(empresaValue);
+          empresas.push(1000 + Math.random() * 4000);
         }
         
         allIbovespaData.push({
           date: currentDate,
-          dateStr: formatDate(currentDate),
+          dateStr: currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
           value: value,
           formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           empresas: empresas
@@ -1574,44 +1315,20 @@
       document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
       
       weightsMap = null;
-      
       setupDateInputs();
-      
       document.getElementById('periodControls').style.display = 'flex';
       document.getElementById('loadingIndicator').style.display = 'none';
-      
       createMainChart();
-      
       filterDataByMonths(1);
-      
       setupPeriodButtons();
-      
       setupCustomRangeButton();
-      
       setupDateValidation();
-      
-      document.getElementById('subtitle').textContent = 'DADOS DE EXEMPLO - ' + document.getElementById('subtitle').textContent;
-    }
-    
-    function formatDate(date) {
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    }
-    
-    function handleResize() {
-      if (ibovespaChart) {
-        ibovespaChart.resize();
-      }
     }
     
     function init() {
-      console.log('Inicializando aplicação do Ibovespa...');
-      
-      window.addEventListener('resize', handleResize);
-      
+      window.addEventListener('resize', () => {
+        if (ibovespaChart) ibovespaChart.resize();
+      });
       loadIbovespaData();
     }
     
