@@ -542,15 +542,11 @@
     // URL da planilha pública do Google Sheets (Ibovespa)
     const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
     
-    // URL da planilha de Pesos (aba Pesos) - mesma planilha, aba diferente
-    const WEIGHTS_SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?gid=1&output=csv";
-    
     // Variáveis globais
     let ibovespaChart = null;
     let allIbovespaData = [];
     let filteredData = [];
     let percentData = [];
-    let weightsData = []; // Mantido por compatibilidade
     let weightsMap = null; // Mapa com valores lidos das células KW2..KW7
     
     // Data mínima permitida (30/12/2024)
@@ -674,169 +670,120 @@
       }
     }
 
-    // Função para buscar dados dos pesos da planilha
+    // Função para buscar dados dos pesos - usando a mesma URL da planilha principal
     async function loadWeightsData() {
       try {
         console.log('Iniciando busca de dados dos pesos...');
         
-        const response = await fetch(WEIGHTS_SPREADSHEET_URL);
+        const response = await fetch(SPREADSHEET_URL);
         
         if (!response.ok) {
           throw new Error(`Erro HTTP: ${response.status}`);
         }
         
         const csvText = await response.text();
-        console.log('Dados de pesos CSV recebidos, primeiras 1000 caracteres:', csvText.substring(0, 1000));
+        console.log('Dados de pesos CSV recebidos');
         
         processWeightsCSVData(csvText);
         
       } catch (error) {
         console.error('Erro ao buscar dados dos pesos:', error);
-        // Sem dados de exemplo - deixar vazio
-        weightsData = [];
         weightsMap = null;
       }
     }
 
-    // Função para converter letras de coluna em número (ex: A=1, B=2, AA=27, etc.)
-    function columnLetterToNumber(column) {
-      let result = 0;
-      for (let i = 0; i < column.length; i++) {
-        result = result * 26 + (column.charCodeAt(i) - 64);
-      }
-      return result;
-    }
-
-    // Função para processar dados CSV de pesos - agora pega de KW2..KW7
+    // Função para processar dados CSV de pesos - seguindo exatamente seu exemplo
     function processWeightsCSVData(csvText) {
       try {
-        const lines = csvText.split(/\r?\n/);
-        
-        // Converter coluna KW para número (K=11, W=23, KW = 11*26 + 23 = 309)
-        const colKW = columnLetterToNumber('KW'); // KW = 309
-        const rowIndices = [2, 3, 4, 5, 6, 7]; // Linhas 2 a 7
-        
-        const extracted = [];
-        
-        for (let i = 0; i < lines.length && extracted.length < 6; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
+        // Dividir linhas e colunas como no seu exemplo
+        const linhas = csvText.split("\n").map(l => {
+          // Processar a linha para lidar com vírgulas dentro de aspas
+          let result = [];
+          let current = '';
+          let inQuotes = false;
           
-          const columns = parseCSVLine(line);
-          
-          // Verificar se estamos na linha correta (2 a 7)
-          const currentRow = i + 1; // As linhas no CSV começam em 1
-          if (rowIndices.includes(currentRow)) {
-            // Verificar se temos coluna KW (índice 308, pois arrays são 0-based)
-            if (columns.length > colKW - 1) {
-              const value = columns[colKW - 1].trim().replace(/"/g, '');
-              if (value) {
-                const cleaned = value.replace(/\./g, '').replace(',', '.').replace('%','').trim();
-                const num = parseFloat(cleaned);
-                extracted.push(isNaN(num) ? null : num);
-              } else {
-                extracted.push(null);
-              }
-            } else {
-              extracted.push(null);
-            }
-          }
-        }
-        
-        // Se não encontrou nas linhas exatas, tentar busca por padrão
-        if (extracted.length < 6 || extracted.some(v => v === null)) {
-          console.log('Procurando dados nas células KW2..KW7 por varredura...');
-          
-          // Reiniciar o array
-          const newExtracted = [];
-          const labels = ['5 maiores', '10 maiores', '15 maiores', '20 maiores', '25 maiores', '30 maiores'];
-          
-          // Primeiro, tentar encontrar os valores na coluna KW
-          for (let i = 0; i < lines.length && newExtracted.length < 6; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
+          for (let i = 0; i < l.length; i++) {
+            const char = l[i];
             
-            const columns = parseCSVLine(line);
-            if (columns.length > colKW - 1) {
-              const value = columns[colKW - 1].trim().replace(/"/g, '');
-              if (value) {
-                const cleaned = value.replace(/\./g, '').replace(',', '.').replace('%','').trim();
-                const num = parseFloat(cleaned);
-                if (!isNaN(num)) {
-                  newExtracted.push(num);
-                }
-              }
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              result.push(current);
+              current = '';
+            } else {
+              current += char;
             }
           }
           
-          // Se encontrou pelo menos alguns valores, usar eles
-          if (newExtracted.length >= 3) {
-            for (let i = 0; i < 6; i++) {
-              if (i < newExtracted.length && (extracted[i] === null || extracted[i] === undefined)) {
-                extracted[i] = newExtracted[i];
-              }
-            }
-          }
-          
-          // Se ainda faltam, tentar buscar por rótulos
-          if (extracted.some(v => v === null)) {
-            console.log('Tentando busca por rótulos...');
-            for (let labelIndex = 0; labelIndex < labels.length; labelIndex++) {
-              const label = labels[labelIndex];
-              for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].toLowerCase().trim();
-                if (line.includes(label)) {
-                  const columns = parseCSVLine(lines[i]);
-                  // Procurar um número na linha
-                  for (let col = 0; col < columns.length; col++) {
-                    const value = columns[col].trim().replace(/"/g, '');
-                    const cleaned = value.replace(/\./g, '').replace(',', '.').replace('%','').trim();
-                    const num = parseFloat(cleaned);
-                    if (!isNaN(num) && num > 0 && num <= 100) {
-                      if (extracted[labelIndex] === null) {
-                        extracted[labelIndex] = num;
-                      }
-                      break;
-                    }
-                  }
-                  break;
-                }
-              }
-            }
-          }
-        }
+          result.push(current);
+          return result;
+        });
         
-        // Preparar mapa final
-        // Ordem solicitada:
-        // 0 -> 5 Maiores (KW2)
-        // 1 -> 10 Maiores (KW3)
-        // 2 -> 15 Maiores (KW4)
-        // 3 -> 20 Maiores (KW5)
-        // 4 -> 25 Maiores (KW6)
-        // 5 -> 30 Maiores (KW7)
-        const finalVals = extracted.map(v => (typeof v === 'number' ? Math.round(v * 100) / 100 : null));
-
-        weightsMap = {
-          soma5Raw: finalVals[0] !== null ? finalVals[0] : 0,
-          soma10Raw: finalVals[1] !== null ? finalVals[1] : 0,
-          soma15Raw: finalVals[2] !== null ? finalVals[2] : 0,
-          soma20Raw: finalVals[3] !== null ? finalVals[3] : 0,
-          soma25Raw: finalVals[4] !== null ? finalVals[4] : 0,
-          soma30Raw: finalVals[5] !== null ? finalVals[5] : 0,
-          somaRestanteRaw: finalVals[5] !== null ? (100 - finalVals[5]) : 0,
-          somaIbovRaw: 100
+        const colunaKW = 282; // Índice da coluna KW (0-based)
+        
+        // Mapear as linhas 2 a 7 (índices 1 a 6)
+        const dados = {
+          soma5Raw: linhas[1] && linhas[1][colunaKW] ? parseWeightValue(linhas[1][colunaKW]) : 0,
+          soma10Raw: linhas[2] && linhas[2][colunaKW] ? parseWeightValue(linhas[2][colunaKW]) : 0,
+          soma15Raw: linhas[3] && linhas[3][colunaKW] ? parseWeightValue(linhas[3][colunaKW]) : 0,
+          soma20Raw: linhas[4] && linhas[4][colunaKW] ? parseWeightValue(linhas[4][colunaKW]) : 0,
+          soma25Raw: linhas[5] && linhas[5][colunaKW] ? parseWeightValue(linhas[5][colunaKW]) : 0,
+          soma30Raw: linhas[6] && linhas[6][colunaKW] ? parseWeightValue(linhas[6][colunaKW]) : 0
         };
-
-        // Para compatibilidade, manter weightsData vazio
-        weightsData = [];
-
+        
+        // Garantir que todos os valores sejam números
+        Object.keys(dados).forEach(key => {
+          if (typeof dados[key] !== 'number' || isNaN(dados[key])) {
+            dados[key] = 0;
+          }
+        });
+        
+        // Calcular o restante
+        dados.somaRestanteRaw = 100 - dados.soma30Raw;
+        dados.somaIbovRaw = 100;
+        
+        weightsMap = dados;
+        
         console.log('weightsMap lido (KW2..KW7):', weightsMap);
+        console.log('Valores específicos:');
+        console.log('5 Maiores:', weightsMap.soma5Raw);
+        console.log('10 Maiores:', weightsMap.soma10Raw);
+        console.log('15 Maiores:', weightsMap.soma15Raw);
+        console.log('20 Maiores:', weightsMap.soma20Raw);
+        console.log('25 Maiores:', weightsMap.soma25Raw);
+        console.log('30 Maiores:', weightsMap.soma30Raw);
+        console.log('Restante:', weightsMap.somaRestanteRaw);
 
       } catch (error) {
         console.error('Erro ao processar dados de pesos CSV:', error);
-        weightsData = [];
         weightsMap = null;
       }
+    }
+    
+    // Função auxiliar para parsear valores de peso
+    function parseWeightValue(value) {
+      if (!value) return 0;
+      
+      // Remover aspas e espaços
+      let cleanValue = value.toString().replace(/"/g, '').trim();
+      
+      // Se já for um número, retornar
+      if (!isNaN(cleanValue) && cleanValue !== '') {
+        return parseFloat(cleanValue);
+      }
+      
+      // Tentar diferentes formatos
+      // Formato com vírgula decimal (ex: "45,12")
+      if (cleanValue.includes(',')) {
+        // Remover pontos de milhar e substituir vírgula decimal por ponto
+        cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleanValue);
+        return isNaN(num) ? 0 : num;
+      }
+      
+      // Formato com ponto decimal (ex: "45.12")
+      const num = parseFloat(cleanValue);
+      return isNaN(num) ? 0 : num;
     }
 
     // Função para processar dados CSV
@@ -1154,44 +1101,22 @@
         };
       }
 
-      // Fallback: comportamento anterior (somar primeiro 30 pesos de weightsData)
-      const paddedWeights = [];
-      for (let i = 0; i < 30; i++) {
-        paddedWeights.push(weightsData[i] || 0);
-      }
-      
-      const soma5 = paddedWeights.slice(0,5).reduce((a,b)=>a+b,0);
-      const soma10 = paddedWeights.slice(0,10).reduce((a,b)=>a+b,0);
-      const soma15 = paddedWeights.slice(0,15).reduce((a,b)=>a+b,0);
-      const soma20 = paddedWeights.slice(0,20).reduce((a,b)=>a+b,0);
-      const soma25 = paddedWeights.slice(0,25).reduce((a,b)=>a+b,0);
-      const soma30 = paddedWeights.slice(0,30).reduce((a,b)=>a+b,0);
-      
-      const peso5Pct = Math.round((soma5 / 100) * 10000) / 10000;
-      const peso10Pct = Math.round((soma10 / 100) * 10000) / 10000;
-      const peso15Pct = Math.round((soma15 / 100) * 10000) / 10000;
-      const peso20Pct = Math.round((soma20 / 100) * 10000) / 10000;
-      const peso25Pct = Math.round((soma25 / 100) * 10000) / 10000;
-      const peso30Pct = Math.round((soma30 / 100) * 10000) / 10000;
-      
-      const pesoRestanteRaw = Math.round((100 - soma30) * 100) / 100;
-      const pesoRestantePct = Math.round(((100 - soma30) / 100) * 10000) / 10000;
-      
+      // Fallback: valores padrão se não conseguir ler da planilha
       return {
-        soma5Raw: Math.round(soma5 * 100) / 100,
-        soma10Raw: Math.round(soma10 * 100) / 100,
-        soma15Raw: Math.round(soma15 * 100) / 100,
-        soma20Raw: Math.round(soma20 * 100) / 100,
-        soma25Raw: Math.round(soma25 * 100) / 100,
-        soma30Raw: Math.round(soma30 * 100) / 100,
-        somaRestanteRaw: pesoRestanteRaw,
-        peso5Pct,
-        peso10Pct,
-        peso15Pct,
-        peso20Pct,
-        peso25Pct,
-        peso30Pct,
-        pesoRestantePct,
+        soma5Raw: 0,
+        soma10Raw: 0,
+        soma15Raw: 0,
+        soma20Raw: 0,
+        soma25Raw: 0,
+        soma30Raw: 0,
+        somaRestanteRaw: 0,
+        peso5Pct: 0,
+        peso10Pct: 0,
+        peso15Pct: 0,
+        peso20Pct: 0,
+        peso25Pct: 0,
+        peso30Pct: 0,
+        pesoRestantePct: 0,
         pesoIbovPct: 1
       };
     }
@@ -1447,7 +1372,7 @@
           const contribuicaoFormatada = contribuicaoPercentual.toFixed(2);
           
           // Quarta coluna: peso atual vindo da planilha "Pesos" -> células KW2..KW7
-          const pesoAtualExibicao = (typeof grupo.pesoRaw === 'number') ? `${grupo.pesoRaw.toFixed(2)}%` : '0.00%';
+          const pesoAtualExibicao = (typeof grupo.pesoRaw === 'number' && grupo.pesoRaw !== 0) ? `${grupo.pesoRaw.toFixed(2)}%` : '0.00%';
           
           const sinalVariacao = variacaoPercentual >= 0 ? '+' : '';
           const sinalContribuicao = contribuicaoPercentual >= 0 ? '+' : '';
@@ -1648,7 +1573,6 @@
       const lastRecord = allIbovespaData[allIbovespaData.length - 1];
       document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
       
-      weightsData = []; // Limpar pesos de exemplo
       weightsMap = null;
       
       setupDateInputs();
