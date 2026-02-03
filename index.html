@@ -158,7 +158,7 @@
       display: none;
       background: white;
       padding: 2px 4px;
-      border-radius: 3px;
+          border-radius: 3px;
       border: 1px solid #ff0000;
       z-index: 10;
       white-space: nowrap;
@@ -452,7 +452,7 @@
           <table class="contributions-table">
             <thead>
               <tr>
-                <th>Grupo de Empresas</th>
+                <th>Empresa/Ação</th>
                 <th>Variação<br>(%)</th>
                 <th>Contribuição<br>(%)</th>
                 <th>Peso Atual<br>(%)</th>
@@ -491,6 +491,8 @@
     let allIbovespaData = [];
     let filteredData = [];
     let weightsMap = null;
+    let acoesData = []; // Array para armazenar dados das ações individuais
+    let acoesNames = []; // Array para armazenar nomes das ações
     
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
     let customTooltip = null;
@@ -679,9 +681,12 @@
       try {
         const lines = csvText.split('\n');
         allIbovespaData = [];
+        acoesData = [];
+        acoesNames = [];
         
         let startIndex = -1;
         
+        // Encontra a linha de cabeçalho
         for (let i = 0; i < lines.length; i++) {
           if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
             startIndex = i;
@@ -699,6 +704,27 @@
         }
         
         if (startIndex === -1) startIndex = 1;
+        
+        // Processa os nomes das ações (linha de cabeçalho)
+        if (startIndex > 0) {
+          const headerLine = lines[startIndex - 1];
+          const headerColumns = parseCSVLine(headerLine);
+          
+          // Colunas 139 a 269 (índices 138 a 268)
+          for (let col = 138; col <= 268 && col < headerColumns.length; col++) {
+            let nomeAcao = headerColumns[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
+            // Limpa o nome da ação
+            nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
+            acoesNames.push(nomeAcao);
+          }
+        }
+        
+        // Se não encontrou nomes, cria nomes padrão
+        if (acoesNames.length === 0) {
+          for (let i = 1; i <= 131; i++) {
+            acoesNames.push(`Ação ${i}`);
+          }
+        }
         
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i].trim();
@@ -737,12 +763,21 @@
               empresas.push(isNaN(empresaValue) ? 0 : empresaValue);
             }
             
+            // Processa as ações individuais (colunas 139 a 269)
+            const acoesDia = [];
+            for (let col = 139; col <= 269 && col < columns.length; col++) {
+              const acaoValueStr = columns[col]?.trim().replace(/"/g, '') || '0';
+              const acaoValue = parseFloat(acaoValueStr.replace(/\./g, '').replace(',', '.'));
+              acoesDia.push(isNaN(acaoValue) ? 0 : acaoValue);
+            }
+            
             allIbovespaData.push({
               date: date,
               dateStr: dateStr,
               value: value,
               formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-              empresas: empresas
+              empresas: empresas,
+              acoes: acoesDia
             });
           }
         }
@@ -1117,6 +1152,17 @@
         return;
       }
       
+      // Tabela 1: Maiores empresas (mantém a lógica original)
+      updateTable1(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
+      
+      // Tabela 2: Maiores contribuições - Ações individuais
+      updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
+      
+      // Tabela 3: Maiores contribuições - Setores (mantém a mesma lógica da tabela 1)
+      updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
+    }
+    
+    function updateTable1(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
       const pesos = calculateGroupWeights();
       const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
@@ -1159,62 +1205,239 @@
       const contribuicaoRestante = 100 - contribuicao30Maiores;
       const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
       
-      for (let tableNum = 1; tableNum <= 3; tableNum++) {
-        const tableBody = document.getElementById(`contributionsTableBody${tableNum}`);
-        tableBody.innerHTML = '';
-        
-        grupos.forEach(grupo => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="group-cell">${grupo.nome}</td>
-            <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
-              ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
-            </td>
-            <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
-              ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
-            </td>
-            <td class="value-cell" style="color: #1E4DB7">
-              ${grupo.pesoRaw.toFixed(2)}%
-            </td>
-          `;
-          tableBody.appendChild(row);
-        });
-        
-        const restanteRow = document.createElement('tr');
-        restanteRow.innerHTML = `
-          <td class="group-cell">Restante</td>
-          <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
-            ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
+      const tableBody = document.getElementById('contributionsTableBody1');
+      tableBody.innerHTML = '';
+      
+      grupos.forEach(grupo => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="group-cell">${grupo.nome}</td>
+          <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
+            ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
           </td>
-          <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
-            ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
+          <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
+            ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
-            ${pesos.somaRestanteRaw.toFixed(2)}%
+            ${grupo.pesoRaw.toFixed(2)}%
           </td>
         `;
-        tableBody.appendChild(restanteRow);
+        tableBody.appendChild(row);
+      });
+      
+      const restanteRow = document.createElement('tr');
+      restanteRow.innerHTML = `
+        <td class="group-cell">Restante</td>
+        <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
+          ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
+          ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7">
+          ${pesos.somaRestanteRaw.toFixed(2)}%
+        </td>
+      `;
+      tableBody.appendChild(restanteRow);
+      
+      const ibovespaRow = document.createElement('tr');
+      ibovespaRow.style.backgroundColor = '#f0f5ff';
+      ibovespaRow.style.fontWeight = 'bold';
+      ibovespaRow.innerHTML = `
+        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
+        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
+          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+      `;
+      tableBody.appendChild(ibovespaRow);
+      
+      document.getElementById('tableContainer1').style.display = 'block';
+      document.getElementById('tableTitle1').style.display = 'block';
+    }
+    
+    function updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
+      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
+      
+      // Calcula a contribuição de cada ação individual (colunas 139-269)
+      const contribuicoesAcoes = [];
+      
+      // Para cada ação (0-130, correspondendo às colunas 139-269)
+      for (let acaoIndex = 0; acaoIndex < 131; acaoIndex++) {
+        let somaAcao = 0;
         
-        const ibovespaRow = document.createElement('tr');
-        ibovespaRow.style.backgroundColor = '#f0f5ff';
-        ibovespaRow.style.fontWeight = 'bold';
-        ibovespaRow.innerHTML = `
-          <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
-          <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-            ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-            100.00%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-            100.00%
-          </td>
-        `;
-        tableBody.appendChild(ibovespaRow);
+        // Soma a contribuição desta ação em todos os dias do período
+        for (let i = 1; i < filteredData.length; i++) {
+          const registro = filteredData[i];
+          if (registro.acoes && registro.acoes.length > acaoIndex) {
+            somaAcao += registro.acoes[acaoIndex] || 0;
+          }
+        }
         
-        document.getElementById(`tableContainer${tableNum}`).style.display = 'block';
-        document.getElementById(`tableTitle${tableNum}`).style.display = 'block';
+        // Calcula os percentuais
+        const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
+        const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
+        
+        contribuicoesAcoes.push({
+          nome: acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`,
+          somaPontos: somaAcao,
+          variacaoPercentual: variacaoPercentualAcao,
+          contribuicaoPercentual: contribuicaoPercentualAcao,
+          indice: acaoIndex
+        });
       }
+      
+      // Ordena por contribuição em pontos (da maior para a menor)
+      contribuicoesAcoes.sort((a, b) => b.somaPontos - a.somaPontos);
+      
+      // Pega as 7 maiores contribuições
+      const top7Acoes = contribuicoesAcoes.slice(0, 7);
+      
+      const tableBody = document.getElementById('contributionsTableBody2');
+      tableBody.innerHTML = '';
+      
+      // Adiciona as 7 ações
+      top7Acoes.forEach(acao => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="group-cell">${acao.nome}</td>
+          <td class="value-cell" style="color: ${acao.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+            ${acao.variacaoPercentual >= 0 ? '+' : ''}${acao.variacaoPercentual.toFixed(2)}%
+          </td>
+          <td class="value-cell" style="color: ${acao.contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+            ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}%
+          </td>
+          <td class="value-cell" style="color: #1E4DB7">
+            -
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+      
+      // Adiciona o Ibovespa como 8ª linha
+      const ibovespaRow = document.createElement('tr');
+      ibovespaRow.style.backgroundColor = '#f0f5ff';
+      ibovespaRow.style.fontWeight = 'bold';
+      ibovespaRow.innerHTML = `
+        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
+        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
+          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+      `;
+      tableBody.appendChild(ibovespaRow);
+      
+      document.getElementById('tableContainer2').style.display = 'block';
+      document.getElementById('tableTitle2').style.display = 'block';
+    }
+    
+    function updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
+      const pesos = calculateGroupWeights();
+      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
+      
+      const grupos = [
+        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, pesoRaw: pesos.soma5Raw },
+        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, pesoRaw: pesos.soma10Raw },
+        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, pesoRaw: pesos.soma15Raw },
+        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, pesoRaw: pesos.soma20Raw },
+        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, pesoRaw: pesos.soma25Raw },
+        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, pesoRaw: pesos.soma30Raw }
+      ];
+      
+      let contribuicao30Maiores = 0;
+      let variacao30Maiores = 0;
+      
+      grupos.forEach(grupo => {
+        let somaEmpresas = 0;
+        
+        for (let i = 1; i < filteredData.length; i++) {
+          const registro = filteredData[i];
+          if (registro.empresas && registro.empresas.length > 0) {
+            for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
+              somaEmpresas += registro.empresas[j] || 0;
+            }
+          }
+        }
+        
+        const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
+        const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
+        
+        if (grupo.nome === "30 Maiores Empresas") {
+          contribuicao30Maiores = contribuicaoPercentual;
+          variacao30Maiores = variacaoPercentual;
+        }
+        
+        grupo.contribuicao = contribuicaoPercentual;
+        grupo.variacao = variacaoPercentual;
+      });
+      
+      const contribuicaoRestante = 100 - contribuicao30Maiores;
+      const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
+      
+      const tableBody = document.getElementById('contributionsTableBody3');
+      tableBody.innerHTML = '';
+      
+      grupos.forEach(grupo => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="group-cell">${grupo.nome}</td>
+          <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
+            ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
+          </td>
+          <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
+            ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
+          </td>
+          <td class="value-cell" style="color: #1E4DB7">
+            ${grupo.pesoRaw.toFixed(2)}%
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+      
+      const restanteRow = document.createElement('tr');
+      restanteRow.innerHTML = `
+        <td class="group-cell">Restante</td>
+        <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
+          ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
+          ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7">
+          ${pesos.somaRestanteRaw.toFixed(2)}%
+        </td>
+      `;
+      tableBody.appendChild(restanteRow);
+      
+      const ibovespaRow = document.createElement('tr');
+      ibovespaRow.style.backgroundColor = '#f0f5ff';
+      ibovespaRow.style.fontWeight = 'bold';
+      ibovespaRow.innerHTML = `
+        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
+        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
+          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
+          100.00%
+        </td>
+      `;
+      tableBody.appendChild(ibovespaRow);
+      
+      document.getElementById('tableContainer3').style.display = 'block';
+      document.getElementById('tableTitle3').style.display = 'block';
     }
     
     function setupPeriodButtons() {
@@ -1287,6 +1510,14 @@
     
     function loadSampleData() {
       allIbovespaData = [];
+      acoesData = [];
+      acoesNames = [];
+      
+      // Gera nomes de exemplo para as ações
+      for (let i = 1; i <= 131; i++) {
+        acoesNames.push(`Ação ${i}`);
+      }
+      
       const startDate = new Date(2023, 0, 1);
       const baseValue = 100000;
       
@@ -1302,12 +1533,18 @@
           empresas.push(1000 + Math.random() * 4000);
         }
         
+        const acoes = [];
+        for (let j = 0; j < 131; j++) {
+          acoes.push(100 + Math.random() * 400);
+        }
+        
         allIbovespaData.push({
           date: currentDate,
           dateStr: currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
           value: value,
           formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          empresas: empresas
+          empresas: empresas,
+          acoes: acoes
         });
       }
       
