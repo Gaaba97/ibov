@@ -5,12 +5,481 @@
   <title>Simon</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* ... (todos os estilos permanecem iguais) ... */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+      font-family: "DM Sans", sans-serif;
+      color: #000;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .container {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+
+    .header-info {
+      width: 95%;
+      max-width: 1200px;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .header-info h1 {
+      font-size: 24px;
+      color: #1E4DB7;
+      margin: 0 0 5px 0;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #555;
+      margin: 0;
+    }
+
+    .chart-main-container {
+      width: 95%;
+      max-width: 1200px;
+      height: auto;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      margin-bottom: 30px;
+    }
+
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 400px;
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100% !important;
+    }
+
+    .period-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .period-btn {
+      padding: 8px 16px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .period-btn:hover {
+      background-color: #e0e0e0;
+    }
+
+    .period-btn.active {
+      background-color: #164CAD;
+      color: white;
+      border-color: #164CAD;
+    }
+
+    .custom-range-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 20px;
+      padding: 8px 12px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .custom-range-container label {
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+      color: #333;
+      white-space: nowrap;
+    }
+
+    .date-input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+      width: 120px;
+    }
+
+    .apply-btn {
+      padding: 6px 12px;
+      background-color: #164CAD;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: "Montserrat", sans-serif;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .apply-btn:hover {
+      background-color: #0d3a8a;
+    }
+
+    .date-error {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      color: #ff0000;
+      font-size: 11px;
+      font-family: "Montserrat", sans-serif;
+      margin-top: 2px;
+      display: none;
+      background: white;
+      padding: 2px 4px;
+          border-radius: 3px;
+      border: 1px solid #ff0000;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    .date-input-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .loading {
+      color: #666;
+      font-style: italic;
+      font-size: 16px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .error {
+      color: #ff0000;
+      background-color: #ffe6e6;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .custom-tooltip {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #164CAD;
+      border-radius: 8px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      pointer-events: none;
+      z-index: 100;
+      font-family: "Montserrat", sans-serif;
+      backdrop-filter: blur(5px);
+      transition: opacity 0.2s ease;
+      opacity: 0;
+    }
+
+    .custom-tooltip.visible {
+      opacity: 1;
+    }
+
+    .custom-tooltip::before {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-style: solid;
+    }
+
+    .custom-tooltip.top::before {
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 8px 8px 0 8px;
+      border-color: #164CAD transparent transparent transparent;
+    }
+
+    .tooltip-header {
+      font-weight: 550;
+      color: #000;
+      margin-bottom: 8px;
+      font-size: 14px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 4px;
+    }
+
+    .tooltip-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .tooltip-label {
+      display: flex;
+      align-items: center;
+      color: #000;
+    }
+
+    .tooltip-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      display: inline-block;
+    }
+
+    .tooltip-value {
+      font-weight: 400;
+      color: #000;
+      margin-left: 12px;
+    }
+
+    .tables-wrapper {
+      width: 95%;
+      max-width: 1400px;
+      display: flex;
+      gap: 20px;
+      margin-top: 40px;
+      margin-bottom: 40px;
+      justify-content: space-between;
+    }
+
+    .table-container {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+
+    .contributions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "Montserrat", sans-serif;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    .contributions-table th {
+      background-color: #164CAD;
+      color: white;
+      font-weight: 500;
+      text-align: center;
+      padding: 12px 8px;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: normal;
+      line-height: 1.2;
+    }
+
+    .contributions-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e0e0e0;
+      text-align: center;
+      word-wrap: break-word;
+    }
+
+    .contributions-table tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .contributions-table tbody tr:hover {
+      background-color: #f0f5ff;
+    }
+
+    .contributions-table .group-cell {
+      font-weight: 500;
+      color: #164CAD;
+      text-align: left;
+    }
+
+    .contributions-table .value-cell {
+      text-align: center;
+      font-weight: 500;
+      font-family: "DM Sans", sans-serif;
+    }
+
+    .contributions-table th:nth-child(1),
+    .contributions-table td:nth-child(1) {
+      width: 35%;
+    }
+
+    .contributions-table th:nth-child(2),
+    .contributions-table td:nth-child(2) {
+      width: 20%;
+    }
+
+    .contributions-table th:nth-child(3),
+    .contributions-table td:nth-child(3) {
+      width: 20%;
+    }
+
+    .contributions-table th:nth-child(4),
+    .contributions-table td:nth-child(4) {
+      width: 25%;
+    }
+
+    .table-title {
+      width: 100%;
+      text-align: center;
+      margin-top: 40px;
+      margin-bottom: 15px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 16px;
+      color: #1E4DB7;
+      font-weight: 500;
+      display: none;
+    }
+
+    .table-section {
+      width: 32%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 1300px) {
+      .tables-wrapper {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .table-section {
+        width: 48%;
+        margin-bottom: 20px;
+      }
+    }
+    
+    @media (max-width: 900px) {
+      .table-section {
+        width: 100%;
+      }
+      
+      .period-controls {
+        flex-direction: column;
+      }
+      
+      .custom-range-container {
+        margin-left: 0;
+        margin-top: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- ... (todo o HTML permanece igual) ... -->
+    <div class="header-info">
+      <h1>Ibovespa - Atribuição de Performance</h1>
+      <div class="subtitle" id="subtitle">Carregando dados da planilha...</div>
+    </div>
+    
+    <div class="chart-main-container">
+      <div class="chart-container">
+        <canvas id="ibovespaChart"></canvas>
+      </div>
+      <div class="period-controls" id="periodControls" style="display: none;">
+        <button class="period-btn active" data-period="1m">1 Mês</button>
+        <button class="period-btn" data-period="3m">3 Meses</button>
+        <button class="period-btn" data-period="6m">6 Meses</button>
+        <button class="period-btn" data-period="1y">1 Ano</button>
+        <button class="period-btn" data-period="all">Todo Período</button>
+        
+        <div class="custom-range-container">
+          <label for="startDate">De:</label>
+          <div class="date-input-wrapper">
+            <input type="date" id="startDate" class="date-input">
+            <div id="startDateError" class="date-error"></div>
+          </div>
+          
+          <label for="endDate">Até:</label>
+          <div class="date-input-wrapper">
+            <input type="date" id="endDate" class="date-input">
+            <div id="endDateError" class="date-error"></div>
+          </div>
+          
+          <button id="applyCustomRange" class="apply-btn">Aplicar</button>
+        </div>
+      </div>
+      <div class="loading" id="loadingIndicator">Carregando gráfico...</div>
+    </div>
+
+    <div class="tables-wrapper" id="tablesWrapper">
+      <div class="table-section">
+        <div class="table-title" id="tableTitle1">Maiores empresas</div>
+        <div class="table-container" id="tableContainer1">
+          <table class="contributions-table">
+            <thead>
+              <tr>
+                <th>Grupo de Empresas</th>
+                <th>Variação<br>(%)</th>
+                <th>Contribuição<br>(%)</th>
+                <th>Peso Atual<br>(%)</th>
+              </tr>
+            </thead>
+            <tbody id="contributionsTableBody1"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <div class="table-title" id="tableTitle2">Maiores contribuições - Ações</div>
+        <div class="table-container" id="tableContainer2">
+          <table class="contributions-table">
+            <thead>
+              <tr>
+                <th>Empresa/Ação</th>
+                <th>Variação<br>(%)</th>
+                <th>Contribuição<br>(%)</th>
+                <th>Peso Atual<br>(%)</th>
+              </tr>
+            </thead>
+            <tbody id="contributionsTableBody2"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <div class="table-title" id="tableTitle3">Maiores contribuições - Setores</div>
+        <div class="table-container" id="tableContainer3">
+          <table class="contributions-table">
+            <thead>
+              <tr>
+                <th>Grupo de Empresas</th>
+                <th>Variação<br>(%)</th>
+                <th>Contribuição<br>(%)</th>
+                <th>Peso Atual<br>(%)</th>
+              </tr>
+            </thead>
+            <tbody id="contributionsTableBody3"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -27,7 +496,86 @@
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
     let customTooltip = null;
 
-    // ... (funções createCustomTooltip e showCustomTooltip permanecem iguais) ...
+    function createCustomTooltip() {
+      if (customTooltip) return customTooltip;
+      
+      customTooltip = document.createElement('div');
+      customTooltip.className = 'custom-tooltip';
+      document.querySelector('.chart-main-container').appendChild(customTooltip);
+      return customTooltip;
+    }
+
+    function showCustomTooltip(chart, tooltip) {
+      const tooltipEl = createCustomTooltip();
+      
+      if (tooltip.opacity === 0) {
+        tooltipEl.classList.remove('visible');
+        return;
+      }
+
+      if (tooltip.body) {
+        const title = tooltip.title[0] || '';
+        let tooltipHTML = `<div class="tooltip-header">${title}</div>`;
+        
+        tooltip.dataPoints.forEach((dataPoint) => {
+          const dataset = chart.data.datasets[dataPoint.datasetIndex];
+          const pointIndex = dataPoint.dataIndex;
+          const originalValue = filteredData[pointIndex]?.value || 0;
+          const percentValue = dataPoint.raw.y;
+          const color = dataset.borderColor || '#164CAD';
+          
+          tooltipHTML += `
+            <div class="tooltip-item">
+              <span class="tooltip-label">
+                <span class="tooltip-color" style="background-color: ${color}"></span>
+                ${dataset.label || 'Ibovespa'}
+              </span>
+            </div>
+            <div class="tooltip-item">
+              <span class="tooltip-label">Variação:</span>
+              <span class="tooltip-value" style="color: ${percentValue >= 0 ? '#008000' : '#ff0000'}">
+                ${percentValue >= 0 ? '+' : ''}${percentValue.toFixed(2)}%
+              </span>
+            </div>
+            <div class="tooltip-item">
+              <span class="tooltip-label">Valor:</span>
+              <span class="tooltip-value">${originalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pontos</span>
+            </div>
+          `;
+        });
+        
+        tooltipEl.innerHTML = tooltipHTML;
+      }
+
+      const position = chart.canvas.getBoundingClientRect();
+      const chartContainer = document.querySelector('.chart-main-container');
+      const containerRect = chartContainer.getBoundingClientRect();
+      
+      let left = position.left + tooltip.caretX - containerRect.left;
+      let top = position.top + tooltip.caretY - containerRect.top;
+      
+      const tooltipWidth = tooltipEl.offsetWidth;
+      const tooltipHeight = tooltipEl.offsetHeight;
+      
+      if (top - tooltipHeight - 10 < 0) {
+        top += 20;
+      } else {
+        top -= tooltipHeight + 10;
+      }
+      
+      if (left + tooltipWidth > containerRect.width) {
+        left = containerRect.width - tooltipWidth - 10;
+      } else if (left < 0) {
+        left = 10;
+      } else {
+        left -= tooltipWidth / 2;
+      }
+      
+      tooltipEl.style.left = left + 'px';
+      tooltipEl.style.top = top + 'px';
+      
+      tooltipEl.className = 'custom-tooltip top visible';
+    }
 
     async function loadIbovespaData() {
       try {
@@ -134,8 +682,37 @@
         allIbovespaData = [];
         acoesNames = [];
         
-        // Encontra a linha de dados (onde começam as datas)
+        // Primeiro, extrai os nomes das ações da SEGUNDA linha (índice 1)
+        if (lines.length > 1) {
+          const segundaLinha = lines[1]; // Linha 2 da planilha
+          const colunasSegundaLinha = parseCSVLine(segundaLinha);
+          
+          // Colunas 139 a 269 (índices 138 a 268)
+          for (let col = 138; col <= 268 && col < colunasSegundaLinha.length; col++) {
+            let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
+            nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
+            
+            // Remove prefixos comuns que podem ser lixo
+            nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
+            
+            if (!nomeAcao || nomeAcao === '') {
+              nomeAcao = `Ação ${col - 137}`;
+            }
+            
+            acoesNames.push(nomeAcao);
+          }
+        }
+        
+        // Se não encontrou nomes, cria nomes padrão
+        if (acoesNames.length === 0) {
+          for (let i = 1; i <= 131; i++) {
+            acoesNames.push(`Ação ${i}`);
+          }
+        }
+        
+        // Agora encontra onde começam os dados
         let startIndex = -1;
+        
         for (let i = 0; i < lines.length; i++) {
           if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
             startIndex = i;
@@ -154,40 +731,6 @@
         
         if (startIndex === -1) startIndex = 1;
         
-        // A linha 2 da planilha (índice 1) contém os nomes das ações
-        // Vamos extrair os nomes das colunas 139 a 269 da linha 2
-        const linhaNomesAcoes = lines[1]; // Linha 2 (índice 1)
-        
-        if (linhaNomesAcoes) {
-          const colunasNomes = parseCSVLine(linhaNomesAcoes);
-          
-          // Colunas 139 a 269 (índices 138 a 268)
-          for (let col = 138; col <= 268 && col < colunasNomes.length; col++) {
-            let nomeAcao = colunasNomes[col]?.trim().replace(/"/g, '') || `Coluna ${col + 1}`;
-            nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
-            
-            // Limpa o nome - remove qualquer número ou caractere especial no início
-            nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
-            
-            if (!nomeAcao || nomeAcao === '') {
-              nomeAcao = `Coluna ${col + 1}`;
-            }
-            
-            acoesNames.push(nomeAcao);
-          }
-        }
-        
-        // Se não encontrou nomes, cria nomes padrão baseados nas colunas
-        if (acoesNames.length === 0) {
-          for (let i = 139; i <= 269; i++) {
-            acoesNames.push(`Coluna ${i}`);
-          }
-        }
-        
-        console.log(`Encontrados ${acoesNames.length} nomes de ações`);
-        console.log(acoesNames.slice(0, 10)); // Log dos primeiros 10 nomes para debug
-        
-        // Agora processa os dados a partir da linha encontrada
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i].trim();
           
@@ -263,7 +806,6 @@
         });
         
       } catch (error) {
-        console.error('Erro no processamento:', error);
         document.getElementById('subtitle').textContent = 'Erro ao processar dados da planilha';
         document.getElementById('loadingIndicator').textContent = `Erro: ${error.message}`;
         document.getElementById('loadingIndicator').className = "error";
@@ -271,7 +813,286 @@
       }
     }
     
-    // ... (funções setupDateInputs, setupDateValidation, parseCSVLine, convertToPercentageData, calculateGroupWeights, createMainChart permanecem iguais) ...
+    function setupDateInputs() {
+      if (allIbovespaData.length === 0) return;
+      
+      const minDate = allIbovespaData[0].date;
+      const maxDate = allIbovespaData[allIbovespaData.length - 1].date;
+      
+      const formatDateForInput = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      const defaultEndDate = maxDate;
+      const defaultStartDate = new Date(defaultEndDate);
+      defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
+      
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      
+      startDateInput.min = formatDateForInput(minDate);
+      startDateInput.max = formatDateForInput(maxDate);
+      startDateInput.value = formatDateForInput(defaultStartDate);
+      
+      endDateInput.min = formatDateForInput(minDate);
+      endDateInput.max = formatDateForInput(maxDate);
+      endDateInput.value = formatDateForInput(defaultEndDate);
+    }
+    
+    function setupDateValidation() {
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const startDateError = document.getElementById('startDateError');
+      const endDateError = document.getElementById('endDateError');
+      
+      startDateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const minAllowedDate = MIN_ALLOWED_DATE;
+        
+        if (selectedDate < minAllowedDate) {
+          startDateError.textContent = 'Menor data disponível 30/12/2024';
+          startDateError.style.display = 'block';
+          this.style.borderColor = '#ff0000';
+        } else {
+          startDateError.style.display = 'none';
+          this.style.borderColor = '#ccc';
+          
+          const endDate = new Date(endDateInput.value);
+          if (endDate < selectedDate) {
+            endDateInput.value = this.value;
+          }
+        }
+      });
+      
+      endDateInput.addEventListener('change', function() {
+        const selectedDate = new Date(this.value);
+        const minAllowedDate = MIN_ALLOWED_DATE;
+        
+        if (selectedDate < minAllowedDate) {
+          endDateError.textContent = 'Menor data disponível 30/12/2024';
+          endDateError.style.display = 'block';
+          this.style.borderColor = '#ff0000';
+        } else {
+          endDateError.style.display = 'none';
+          this.style.borderColor = '#ccc';
+          
+          const startDate = new Date(startDateInput.value);
+          if (startDate > selectedDate) {
+            startDateInput.value = this.value;
+            if (startDate < minAllowedDate) {
+              startDateError.textContent = 'Menor data disponível 30/12/2024';
+              startDateError.style.display = 'block';
+              startDateInput.style.borderColor = '#ff0000';
+            }
+          }
+        }
+      });
+    }
+    
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      result.push(current);
+      return result;
+    }
+    
+    function convertToPercentageData(originalData) {
+      if (!originalData || originalData.length === 0) return [];
+      
+      const firstValue = originalData[0].value;
+      return originalData.map(item => ({
+        x: item.date,
+        y: ((item.value / firstValue) - 1) * 100
+      }));
+    }
+    
+    function calculateGroupWeights() {
+      if (weightsMap && typeof weightsMap.soma5Raw === 'number') {
+        const soma5 = weightsMap.soma5Raw;
+        const soma10 = weightsMap.soma10Raw;
+        const soma15 = weightsMap.soma15Raw;
+        const soma20 = weightsMap.soma20Raw;
+        const soma25 = weightsMap.soma25Raw;
+        const soma30 = weightsMap.soma30Raw;
+        const somaRest = weightsMap.somaRestanteRaw;
+
+        return {
+          soma5Raw: Math.round(soma5 * 100) / 100,
+          soma10Raw: Math.round(soma10 * 100) / 100,
+          soma15Raw: Math.round(soma15 * 100) / 100,
+          soma20Raw: Math.round(soma20 * 100) / 100,
+          soma25Raw: Math.round(soma25 * 100) / 100,
+          soma30Raw: Math.round(soma30 * 100) / 100,
+          somaRestanteRaw: Math.round(somaRest * 100) / 100,
+          peso5Pct: Math.round((soma5 / 100) * 10000) / 10000,
+          peso10Pct: Math.round((soma10 / 100) * 10000) / 10000,
+          peso15Pct: Math.round((soma15 / 100) * 10000) / 10000,
+          peso20Pct: Math.round((soma20 / 100) * 10000) / 10000,
+          peso25Pct: Math.round((soma25 / 100) * 10000) / 10000,
+          peso30Pct: Math.round((soma30 / 100) * 10000) / 10000,
+          pesoRestantePct: Math.round((somaRest / 100) * 10000) / 10000,
+          pesoIbovPct: 1
+        };
+      }
+
+      return {
+        soma5Raw: 0,
+        soma10Raw: 0,
+        soma15Raw: 0,
+        soma20Raw: 0,
+        soma25Raw: 0,
+        soma30Raw: 0,
+        somaRestanteRaw: 0,
+        peso5Pct: 0,
+        peso10Pct: 0,
+        peso15Pct: 0,
+        peso20Pct: 0,
+        peso25Pct: 0,
+        peso30Pct: 0,
+        pesoRestantePct: 0,
+        pesoIbovPct: 1
+      };
+    }
+    
+    function createMainChart() {
+      if (allIbovespaData.length === 0) return;
+      
+      const canvas = document.getElementById('ibovespaChart');
+      const ctx = canvas.getContext('2d');
+      
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const createGradient = (ctx, chartArea) => {
+        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        gradient.addColorStop(0, "#F6F8FC");
+        gradient.addColorStop(0.5, "#8EA8D7");
+        gradient.addColorStop(1, "#164CAD");
+        return gradient;
+      };
+      
+      const initialData = convertToPercentageData(allIbovespaData);
+      
+      ibovespaChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          datasets: [
+            {
+              label: "Ibovespa",
+              data: initialData,
+              borderColor: "#164CAD",
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.15,
+              fill: true,
+              backgroundColor: function(context) {
+                const chart = context.chart;
+                const {ctx, chartArea} = chart;
+                if (!chartArea) return null;
+                return createGradient(ctx, chartArea);
+              },
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            intersect: false,
+            mode: 'index',
+          },
+          plugins: {
+            legend: {
+              position: "top",
+              labels: {
+                usePointStyle: true,
+                pointStyle: "circle",
+                color: "#000000",
+                font: {
+                  family: "Montserrat",
+                  size: 14,
+                  weight: "300",
+                },
+              },
+            },
+            tooltip: {
+              enabled: false,
+              external: (context) => showCustomTooltip(context.chart, context.tooltip)
+            },
+          },
+          scales: {
+            x: {
+              type: "time",
+              time: {
+                unit: "month",
+                displayFormats: { month: "MMM - yy" },
+                tooltipFormat: "dd/MM/yyyy"
+              },
+              ticks: {
+                color: "#000000",
+                maxRotation: 45,
+                minRotation: 45,
+                font: {
+                  family: "Montserrat",
+                  size: 12,
+                  weight: "300",
+                },
+                callback: function(value) {
+                  const date = new Date(value);
+                  const month = date.getMonth();
+                  const year = date.getFullYear().toString().slice(-2);
+                  const mesesPortugues = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                  return `${mesesPortugues[month]} - ${year}`;
+                }
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+            },
+            y: {
+              ticks: {
+                color: "#000000",
+                font: {
+                  family: "Montserrat",
+                  size: 12,
+                  weight: "300",
+                },
+                callback: (v) => `${v.toFixed(1)}%`,
+              },
+              grid: { color: "rgba(0,0,0,0.05)" },
+              title: {
+                display: true,
+                text: 'Variação Percentual (%)',
+                color: "#000000",
+                font: {
+                  family: "Montserrat",
+                  size: 12,
+                  weight: "300",
+                }
+              }
+            },
+          },
+        },
+      });
+    }
     
     function filterDataByMonths(months) {
       if (allIbovespaData.length === 0) return;
@@ -468,7 +1289,7 @@
         const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
         
         contribuicoesAcoes.push({
-          nome: acoesNames[acaoIndex] || `Coluna ${139 + acaoIndex}`,
+          nome: acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`,
           somaPontos: somaAcao,
           variacaoPercentual: variacaoPercentualAcao,
           contribuicaoPercentual: contribuicaoPercentualAcao,
@@ -624,15 +1445,81 @@
       document.getElementById('tableTitle3').style.display = 'block';
     }
     
-    // ... (funções setupPeriodButtons, setupCustomRangeButton, loadSampleData, init permanecem iguais) ...
-
+    function setupPeriodButtons() {
+      const buttons = document.querySelectorAll('.period-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          buttons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          const period = this.getAttribute('data-period');
+          switch(period) {
+            case '1m': filterDataByMonths(1); break;
+            case '3m': filterDataByMonths(3); break;
+            case '6m': filterDataByMonths(6); break;
+            case '1y': filterDataByMonths(12); break;
+            case 'all':
+              filteredData = [...allIbovespaData];
+              updateMainChartData();
+              updateContributionsTable();
+              break;
+          }
+        });
+      });
+    }
+    
+    function setupCustomRangeButton() {
+      const applyBtn = document.getElementById('applyCustomRange');
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const periodButtons = document.querySelectorAll('.period-btn');
+      
+      applyBtn.addEventListener('click', function() {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          alert('Por favor, selecione datas válidas.');
+          return;
+        }
+        
+        const minAllowedDate = MIN_ALLOWED_DATE;
+        
+        if (startDate < minAllowedDate || endDate < minAllowedDate) {
+          alert('Menor data disponível 30/12/2024');
+          return;
+        }
+        
+        if (startDate > endDate) {
+          alert('A data de início deve ser anterior à data de fim.');
+          return;
+        }
+        
+        periodButtons.forEach(btn => btn.classList.remove('active'));
+        
+        if (filterDataByCustomRange(startDate, endDate)) {
+          const formatDateForDisplay = (date) => {
+            return date.toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          };
+          
+          const lastRecord = filteredData[filteredData.length - 1];
+          document.getElementById('subtitle').textContent = 
+            `Intervalo: ${formatDateForDisplay(startDate)} até ${formatDateForDisplay(endDate)} - Ibovespa: ${lastRecord.formattedValue} pontos`;
+        }
+      });
+    }
+    
     function loadSampleData() {
       allIbovespaData = [];
       acoesNames = [];
       
-      // Cria nomes genéricos para as colunas 139-269
-      for (let i = 139; i <= 269; i++) {
-        acoesNames.push(`Coluna ${i}`);
+      // Gera nomes de exemplo para as ações
+      for (let i = 1; i <= 131; i++) {
+        acoesNames.push(`Ação ${i}`);
       }
       
       const startDate = new Date(2023, 0, 1);
