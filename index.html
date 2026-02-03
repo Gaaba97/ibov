@@ -491,8 +491,7 @@
     let allIbovespaData = [];
     let filteredData = [];
     let weightsMap = null;
-    let acoesData = []; // Array para armazenar dados das ações individuais
-    let acoesNames = []; // Array para armazenar nomes das ações
+    let acoesNames = []; // Array para armazenar nomes das ações (segunda linha da planilha)
     
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
     let customTooltip = null;
@@ -681,12 +680,38 @@
       try {
         const lines = csvText.split('\n');
         allIbovespaData = [];
-        acoesData = [];
         acoesNames = [];
         
+        // Primeiro, extrai os nomes das ações da SEGUNDA linha (índice 1)
+        if (lines.length > 1) {
+          const segundaLinha = parseCSVLine(lines[1]);
+          
+          // Colunas 139 a 269 (índices 138 a 268)
+          for (let col = 138; col <= 268 && col < segundaLinha.length; col++) {
+            let nomeAcao = segundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
+            nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
+            
+            // Remove prefixos comuns que podem ser lixo
+            nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
+            
+            if (!nomeAcao || nomeAcao === '') {
+              nomeAcao = `Ação ${col - 137}`;
+            }
+            
+            acoesNames.push(nomeAcao);
+          }
+        }
+        
+        // Se não encontrou nomes, cria nomes padrão
+        if (acoesNames.length === 0) {
+          for (let i = 1; i <= 131; i++) {
+            acoesNames.push(`Ação ${i}`);
+          }
+        }
+        
+        // Agora encontra onde começam os dados
         let startIndex = -1;
         
-        // Encontra a linha de cabeçalho
         for (let i = 0; i < lines.length; i++) {
           if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
             startIndex = i;
@@ -704,27 +729,6 @@
         }
         
         if (startIndex === -1) startIndex = 1;
-        
-        // Processa os nomes das ações (linha de cabeçalho)
-        if (startIndex > 0) {
-          const headerLine = lines[startIndex - 1];
-          const headerColumns = parseCSVLine(headerLine);
-          
-          // Colunas 139 a 269 (índices 138 a 268)
-          for (let col = 138; col <= 268 && col < headerColumns.length; col++) {
-            let nomeAcao = headerColumns[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
-            // Limpa o nome da ação
-            nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
-            acoesNames.push(nomeAcao);
-          }
-        }
-        
-        // Se não encontrou nomes, cria nomes padrão
-        if (acoesNames.length === 0) {
-          for (let i = 1; i <= 131; i++) {
-            acoesNames.push(`Ação ${i}`);
-          }
-        }
         
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i].trim();
@@ -1510,12 +1514,38 @@
     
     function loadSampleData() {
       allIbovespaData = [];
-      acoesData = [];
       acoesNames = [];
       
-      // Gera nomes de exemplo para as ações
-      for (let i = 1; i <= 131; i++) {
-        acoesNames.push(`Ação ${i}`);
+      // Gera nomes de exemplo para as ações (baseado em ações reais do Ibovespa)
+      const nomesExemplo = [
+        "PETR4", "VALE3", "ITUB4", "BBDC4", "ABEV3", "WEGE3", "MGLU3", "BBAS3",
+        "B3SA3", "RENT3", "SUZB3", "EQTL3", "GGBR4", "JBSS3", "LREN3", "RADL3",
+        "SBSP3", "CSNA3", "EMBR3", "CYRE3", "UGPA3", "BRFS3", "HYPE3", "CCRO3",
+        "CMIG4", "TIMS3", "VIVT3", "NTCO3", "KLBN11", "BPAC11", "ENGI11", "TAEE11",
+        "SANB11", "AMER3", "CRFB3", "MULT3", "ELET3", "ELET6", "BBSE3", "AZUL4",
+        "GOAU4", "CSAN3", "CPLE6", "EGIE3", "BRKM5", "HAPV3", "IRBR3", "QUAL3",
+        "RAIL3", "PETR3", "VBBR3", "USIM5", "GOLL4", "CIEL3", "PRIO3", "MRFG3",
+        "BBDC3", "ITSA4", "RAIZ4", "ENBR3", "TRPL4", "MRVE3", "SOMA3", "TOTS3",
+        "FLRY3", "BRML3", "GMAT3", "COGN3", "DIRR3", "EZTC3", "WIZS3", "YDUQ3",
+        "LREN3", "ARZZ3", "CVCB3", "MYPK3", "OIBR3", "OIBR4", "BRAP4", "BTOW3",
+        "BRPR3", "CAML3", "CEAB3", "CGAS5", "CLSC4", "CMIN3", "CPFE3", "CSMG3",
+        "CTKA4", "CURY3", "DASA3", "DMMO3", "DOHL4", "DTEX3", "ECOR3", "ELPL3",
+        "EMAE4", "ENAT3", "ENEV3", "ESTR4", "EVEN3", "FESA4", "FHER3", "FRIO3",
+        "GFSA3", "GPCP3", "GSHP3", "GUAR3", "HAGA4", "HBSA3", "HBOR3", "HOOT4",
+        "IGTA3", "INEP3", "INEP4", "JBDU4", "JHSF3", "JOPA4", "KLBN4", "LAME4",
+        "LAVV3", "LCAM3", "LEVE3", "LIGT3", "LPSB3", "LUPA3", "MDIA3", "MGEL4",
+        "MILS3", "MNPR3", "MOSI3", "MOVI3", "MTSA4", "MWET4", "NEMO3", "NEMO6",
+        "ODPV3", "OFSA3", "OMGE3", "OPCT3", "ORVR3", "OSXB3", "PARD3", "PCAR3"
+      ];
+      
+      // Seleciona 131 nomes únicos
+      for (let i = 0; i < 131 && i < nomesExemplo.length; i++) {
+        acoesNames.push(nomesExemplo[i]);
+      }
+      
+      // Completa com nomes genéricos se necessário
+      for (let i = acoesNames.length; i < 131; i++) {
+        acoesNames.push(`Ação ${i + 1}`);
       }
       
       const startDate = new Date(2023, 0, 1);
