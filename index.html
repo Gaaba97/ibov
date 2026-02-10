@@ -1269,6 +1269,15 @@
     function updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
       const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
+      // Cria um array de objetos com índice da coluna e nome da ação
+      const acoesComIndices = [];
+      for (let i = 0; i < 131; i++) {
+        acoesComIndices.push({
+          indice: i,
+          nome: acoesNames[i] || `Ação ${i + 1}`
+        });
+      }
+      
       // Calcula a contribuição de cada ação individual (colunas 139-269)
       const contribuicoesAcoes = [];
       
@@ -1288,20 +1297,17 @@
         const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
         const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
         
-        // CORREÇÃO: Usar o índice correto para obter o nome da ação
-        const nomeAcao = acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`;
-        
         contribuicoesAcoes.push({
-          nome: nomeAcao,
+          indiceOriginal: acaoIndex,
+          nome: acoesComIndices[acaoIndex].nome,
           somaPontos: somaAcao,
           variacaoPercentual: variacaoPercentualAcao,
-          contribuicaoPercentual: contribuicaoPercentualAcao,
-          indice: acaoIndex
+          contribuicaoPercentual: contribuicaoPercentualAcao
         });
       }
       
-      // Ordena por contribuição em pontos (da maior para a menor)
-      contribuicoesAcoes.sort((a, b) => b.somaPontos - a.somaPontos);
+      // Ordena por contribuição percentual (da maior para a menor)
+      contribuicoesAcoes.sort((a, b) => b.contribuicaoPercentual - a.contribuicaoPercentual);
       
       // Pega as 7 maiores contribuições
       const top7Acoes = contribuicoesAcoes.slice(0, 7);
