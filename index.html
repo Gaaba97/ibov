@@ -1218,13 +1218,13 @@
         row.innerHTML = `
           <td class="group-cell">${grupo.nome}</td>
           <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
-            ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
+            ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(02)}%
           </td>
           <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
-            ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
+            ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(02)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
-            ${grupo.pesoRaw.toFixed(2)}%
+            ${grupo.pesoRaw.toFixed(02)}%
           </td>
         `;
         tableBody.appendChild(row);
@@ -1234,13 +1234,13 @@
       restanteRow.innerHTML = `
         <td class="group-cell">Restante</td>
         <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
-          ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
+          ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(02)}%
         </td>
         <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
-          ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
+          ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(02)}%
         </td>
         <td class="value-cell" style="color: #1E4DB7">
-          ${pesos.somaRestanteRaw.toFixed(2)}%
+          ${pesos.somaRestanteRaw.toFixed(02)}%
         </td>
       `;
       tableBody.appendChild(restanteRow);
@@ -1251,7 +1251,7 @@
       ibovespaRow.innerHTML = `
         <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
         <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
+          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(02)}%
         </td>
         <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
           100.00%
@@ -1308,9 +1308,14 @@
       
       // Adiciona as 7 ações
       top7Acoes.forEach(acao => {
+        // Garantir que o nome exibido corresponda ao índice da ação usado nos cálculos
+        const displayName = (acoesNames[acao.indice] && acoesNames[acao.indice].trim())
+          ? acoesNames[acao.indice].trim()
+          : (acao.nome || `Ação ${acao.indice + 1}`);
+        
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td class="group-cell">${acao.nome}</td>
+          <td class="group-cell">${displayName}</td>
           <td class="value-cell" style="color: ${acao.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
             ${acao.variacaoPercentual >= 0 ? '+' : ''}${acao.variacaoPercentual.toFixed(2)}%
           </td>
