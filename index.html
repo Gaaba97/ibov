@@ -1288,8 +1288,11 @@
         const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
         const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
         
+        // Calcula a coluna correspondente na planilha (coluna 139-269)
+        const colunaPlanilha = 139 + acaoIndex;
+        
         contribuicoesAcoes.push({
-          nome: acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`,
+          coluna: colunaPlanilha,
           somaPontos: somaAcao,
           variacaoPercentual: variacaoPercentualAcao,
           contribuicaoPercentual: contribuicaoPercentualAcao,
@@ -1310,12 +1313,12 @@
       top7Acoes.forEach(acao => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td class="group-cell">${acao.nome}</td>
+          <td class="group-cell">Coluna ${acao.coluna}</td>
           <td class="value-cell" style="color: ${acao.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
             ${acao.variacaoPercentual >= 0 ? '+' : ''}${acao.variacaoPercentual.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: ${acao.contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}%
+            ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}% (Col. ${acao.coluna})
           </td>
           <td class="value-cell" style="color: #1E4DB7">
             -
