@@ -308,7 +308,7 @@
     }
 
     .contributions-table tbody tr:hover {
-      background-color: #f0f5ff;
+      background-color = '#f0f5ff';
     }
 
     .contributions-table .group-cell {
@@ -687,16 +687,16 @@
           const segundaLinha = lines[1]; // Linha 2 da planilha
           const colunasSegundaLinha = parseCSVLine(segundaLinha);
           
-          // Colunas 139 a 269 (índices 138 a 268)
-          for (let col = 138; col <= 268 && col < colunasSegundaLinha.length; col++) {
-            let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
+          // Colunas 140 a 270 (índices 139 a 269) - CORREÇÃO: começa na coluna 140, não 139
+          for (let col = 139; col <= 269 && col < colunasSegundaLinha.length; col++) {
+            let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 138}`; // Ajustado para -138
             nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
             
             // Remove prefixos comuns que podem ser lixo
             nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
             
             if (!nomeAcao || nomeAcao === '') {
-              nomeAcao = `Ação ${col - 137}`;
+              nomeAcao = `Ação ${col - 138}`; // Ajustado para -138
             }
             
             acoesNames.push(nomeAcao);
@@ -768,7 +768,7 @@
               empresas.push(isNaN(empresaValue) ? 0 : empresaValue);
             }
             
-            // Processa as ações individuais (colunas 139 a 269)
+            // Processa as ações individuais (colunas 139 a 269) - Dados começam na coluna 139
             const acoesDia = [];
             for (let col = 139; col <= 269 && col < columns.length; col++) {
               const acaoValueStr = columns[col]?.trim().replace(/"/g, '') || '0';
@@ -1288,11 +1288,18 @@
         const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
         const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
         
-        // Calcula a coluna correspondente na planilha (coluna 139-269)
-        const colunaPlanilha = 139 + acaoIndex;
+        // Calcula a coluna correspondente na planilha (dados começam na coluna 139)
+        const colunaDados = 139 + acaoIndex;
+        // O nome da ação está na coluna seguinte (140)
+        const colunaNome = 140 + acaoIndex;
+        
+        // Pega o nome da ação do array acoesNames (que foi extraído das colunas 140-270)
+        const nomeAcao = acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`;
         
         contribuicoesAcoes.push({
-          coluna: colunaPlanilha,
+          colunaDados: colunaDados,
+          colunaNome: colunaNome,
+          nome: nomeAcao,
           somaPontos: somaAcao,
           variacaoPercentual: variacaoPercentualAcao,
           contribuicaoPercentual: contribuicaoPercentualAcao,
@@ -1313,12 +1320,12 @@
       top7Acoes.forEach(acao => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td class="group-cell">Coluna ${acao.coluna}</td>
+          <td class="group-cell">${acao.nome} (Col. ${acao.colunaDados})</td>
           <td class="value-cell" style="color: ${acao.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
             ${acao.variacaoPercentual >= 0 ? '+' : ''}${acao.variacaoPercentual.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: ${acao.contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}% (Col. ${acao.coluna})
+            ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
             -
@@ -1520,7 +1527,7 @@
       allIbovespaData = [];
       acoesNames = [];
       
-      // Gera nomes de exemplo para as ações
+      // Gera nomes de exemplo para as ações (começando na coluna 140)
       for (let i = 1; i <= 131; i++) {
         acoesNames.push(`Ação ${i}`);
       }
