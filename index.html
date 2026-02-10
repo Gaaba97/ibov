@@ -274,6 +274,7 @@
       overflow: hidden;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       display: none;
+      height: 370px; /* Altura fixa para todas as tabelas */
     }
 
     .contributions-table {
@@ -282,6 +283,27 @@
       font-family: "Montserrat", sans-serif;
       font-size: 13px;
       table-layout: fixed;
+      height: 100%; /* Garante que a tabela ocupe toda a altura do container */
+    }
+
+    .contributions-table thead {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .contributions-table tbody {
+      display: block;
+      max-height: 320px; /* Altura fixa para o corpo da tabela */
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .contributions-table tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+      height: 40px; /* Altura fixa para todas as linhas */
     }
 
     .contributions-table th {
@@ -294,6 +316,7 @@
       word-break: normal;
       overflow-wrap: normal;
       line-height: 1.2;
+      height: 50px; /* Altura fixa para o cabeçalho */
     }
 
     .contributions-table td {
@@ -301,6 +324,8 @@
       border-bottom: 1px solid #e0e0e0;
       text-align: center;
       word-wrap: break-word;
+      height: 40px; /* Altura fixa para todas as células */
+      vertical-align: middle;
     }
 
     .contributions-table tbody tr:nth-child(even) {
@@ -308,7 +333,7 @@
     }
 
     .contributions-table tbody tr:hover {
-      background-color = '#f0f5ff';
+      background-color: #f0f5ff;
     }
 
     .contributions-table .group-cell {
@@ -359,6 +384,7 @@
       width: 32%;
       display: flex;
       flex-direction: column;
+      min-height: 420px; /* Altura mínima para a seção da tabela */
     }
 
     @media (max-width: 1300px) {
@@ -1288,17 +1314,10 @@
         const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
         const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
         
-        // Calcula a coluna correspondente na planilha (dados começam na coluna 139)
-        const colunaDados = 139 + acaoIndex;
-        // O nome da ação está na coluna seguinte (140)
-        const colunaNome = 140 + acaoIndex;
-        
-        // Pega o nome da ação do array acoesNames (que foi extraído das colunas 140-270)
+        // Pega o nome da ação do array acoesNames
         const nomeAcao = acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`;
         
         contribuicoesAcoes.push({
-          colunaDados: colunaDados,
-          colunaNome: colunaNome,
           nome: nomeAcao,
           somaPontos: somaAcao,
           variacaoPercentual: variacaoPercentualAcao,
@@ -1320,7 +1339,7 @@
       top7Acoes.forEach(acao => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td class="group-cell">${acao.nome} (Col. ${acao.colunaDados})</td>
+          <td class="group-cell">${acao.nome}</td>
           <td class="value-cell" style="color: ${acao.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
             ${acao.variacaoPercentual >= 0 ? '+' : ''}${acao.variacaoPercentual.toFixed(2)}%
           </td>
@@ -1528,8 +1547,13 @@
       acoesNames = [];
       
       // Gera nomes de exemplo para as ações (começando na coluna 140)
-      for (let i = 1; i <= 131; i++) {
-        acoesNames.push(`Ação ${i}`);
+      const nomesExemplo = ["VALE3", "PETR4", "ITUB4", "BBDC4", "ABEV3", "BBAS3", "WEGE3", "MGLU3", "RENT3", "SUZB3"];
+      for (let i = 0; i < 131; i++) {
+        if (i < nomesExemplo.length) {
+          acoesNames.push(nomesExemplo[i]);
+        } else {
+          acoesNames.push(`Ação ${i + 1}`);
+        }
       }
       
       const startDate = new Date(2023, 0, 1);
