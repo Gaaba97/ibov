@@ -473,7 +473,7 @@
           <table class="contributions-table">
             <thead>
               <tr>
-                <th>Grupo de Empresas</th>
+                <th>Setor</th>
                 <th>Variação<br>(%)</th>
                 <th>Contribuição<br>(%)</th>
                 <th>Peso Atual<br>(%)</th>
@@ -495,10 +495,13 @@
     let allIbovespaData = [];
     let filteredData = [];
     let weightsMap = null;
-    let acoesNames = []; // Array para armazenar nomes das ações (linha 2 da planilha)
+    let acoesNames = [];            // Nomes das ações (col 138–267)
+    let sectorNames = [];          // Nomes dos setores (col 273–300)
     
-    // NOVO: mapa para armazenar os pesos individuais das ações (PROCV col300 -> col301)
+    // Pesos individuais das ações (PROCV col300 -> col301)
     let stockWeightsMap = {};
+    // Pesos individuais dos setores (PROCV col305 -> col306)
+    let sectorWeightsMap = {};
 
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
     let customTooltip = null;
@@ -605,7 +608,6 @@
 
     async function loadWeightsData(csvText) {
       try {
-        // Se não recebermos o csvText, fazemos uma nova requisição
         if (!csvText) {
           const response = await fetch(SPREADSHEET_URL);
           if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
@@ -615,16 +617,14 @@
       } catch (error) {
         weightsMap = null;
         stockWeightsMap = {};
+        sectorWeightsMap = {};
       }
     }
 
-    // Função auxiliar para parsear valores numéricos (suporta vírgula, ponto, %)
     function parseWeightValue(value) {
       if (!value) return 0;
       let cleanValue = value.toString().replace(/"/g, '').trim();
-      // Remove símbolo de porcentagem se existir
       cleanValue = cleanValue.replace('%', '');
-      // Se houver vírgula como separador decimal, converte
       if (cleanValue.includes(',')) {
         cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
       }
@@ -634,7 +634,6 @@
 
     function processWeightsCSVData(csvText) {
       try {
-        // Parse de todas as linhas do CSV
         const linhas = csvText.split("\n").map(l => {
           let result = [];
           let current = '';
@@ -667,30 +666,40 @@
         };
         
         Object.keys(dados).forEach(key => {
-          if (typeof dados[key] !== 'number' || isNaN(dados[key])) {
-            dados[key] = 0;
-          }
+          if (typeof dados[key] !== 'number' || isNaN(dados[key])) dados[key] = 0;
         });
-        
         dados.somaRestanteRaw = 100 - dados.soma30Raw;
         weightsMap = dados;
         
-        // --- NOVO: PESOS INDIVIDUAIS DAS AÇÕES (coluna 300 -> coluna 301) ---
+        // --- PESOS INDIVIDUAIS DAS AÇÕES (coluna 300 -> coluna 301) ---
         stockWeightsMap = {};
         for (let i = 0; i < linhas.length; i++) {
           const row = linhas[i];
-          // Verifica se a linha possui ao menos a coluna 301
           if (row.length > 301) {
             const stockNameRaw = row[300] ? row[300].replace(/"/g, '').trim() : '';
             if (stockNameRaw !== '') {
-              // Normaliza o nome (remove espaços extras)
               const stockName = stockNameRaw.replace(/\s+/g, ' ').trim();
               const weightStr = row[301] ? row[301].replace(/"/g, '').trim() : '';
               if (weightStr !== '') {
                 const weight = parseWeightValue(weightStr);
-                if (!isNaN(weight)) {
-                  stockWeightsMap[stockName] = weight;
-                }
+                if (!isNaN(weight)) stockWeightsMap[stockName] = weight;
+              }
+            }
+          }
+        }
+
+        // --- PESOS INDIVIDUAIS DOS SETORES (coluna 305 -> coluna 306) ---
+        sectorWeightsMap = {};
+        for (let i = 0; i < linhas.length; i++) {
+          const row = linhas[i];
+          if (row.length > 306) {
+            const sectorNameRaw = row[305] ? row[305].replace(/"/g, '').trim() : '';
+            if (sectorNameRaw !== '') {
+              const sectorName = sectorNameRaw.replace(/\s+/g, ' ').trim();
+              const weightStr = row[306] ? row[306].replace(/"/g, '').trim() : '';
+              if (weightStr !== '') {
+                const weight = parseWeightValue(weightStr);
+                if (!isNaN(weight)) sectorWeightsMap[sectorName] = weight;
               }
             }
           }
@@ -699,6 +708,7 @@
       } catch (error) {
         weightsMap = null;
         stockWeightsMap = {};
+        sectorWeightsMap = {};
       }
     }
 
@@ -707,34 +717,41 @@
         const lines = csvText.split('\n');
         allIbovespaData = [];
         acoesNames = [];
+        sectorNames = [];
         
-        // Primeiro, extrai os nomes das ações da SEGUNDA linha (índice 1)
+        // ---- Extrai os nomes das ações (col 138–267) e setores (col 273–300) da segunda linha ----
         if (lines.length > 1) {
           const segundaLinha = lines[1];
           const colunasSegundaLinha = parseCSVLine(segundaLinha);
           
-          // Colunas 138 a 268 (índices 137 a 267)
+          // Nomes das ações (col 137 a 267)
           for (let col = 137; col <= 267 && col < colunasSegundaLinha.length; col++) {
             let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
             nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
             nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
-            
-            if (!nomeAcao || nomeAcao === '') {
-              nomeAcao = `Ação ${col - 137}`;
-            }
-            
+            if (!nomeAcao || nomeAcao === '') nomeAcao = `Ação ${col - 137}`;
             acoesNames.push(nomeAcao);
           }
-        }
-        
-        // Se não encontrou nomes, cria nomes padrão
-        if (acoesNames.length === 0) {
-          for (let i = 1; i <= 131; i++) {
-            acoesNames.push(`Ação ${i}`);
+          
+          // Nomes dos setores (col 273 a 300)
+          for (let col = 273; col <= 300 && col < colunasSegundaLinha.length; col++) {
+            let nomeSetor = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Setor ${col - 272}`;
+            nomeSetor = nomeSetor.replace(/\s+/g, ' ').trim();
+            nomeSetor = nomeSetor.replace(/^[\d\s\-\.]+/, '').trim();
+            if (!nomeSetor || nomeSetor === '') nomeSetor = `Setor ${col - 272}`;
+            sectorNames.push(nomeSetor);
           }
         }
         
-        // Encontra onde começam os dados
+        // Padrões caso não tenha encontrado
+        if (acoesNames.length === 0) {
+          for (let i = 1; i <= 131; i++) acoesNames.push(`Ação ${i}`);
+        }
+        if (sectorNames.length === 0) {
+          for (let i = 1; i <= 28; i++) sectorNames.push(`Setor ${i}`);
+        }
+        
+        // ---- Encontra o início dos dados ----
         let startIndex = -1;
         for (let i = 0; i < lines.length; i++) {
           if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
@@ -752,56 +769,67 @@
         }
         if (startIndex === -1) startIndex = 1;
         
+        // ---- Processa cada linha de dados ----
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) continue;
           
           let columns = parseCSVLine(line);
-          if (columns.length >= 2) {
-            const dateStr = columns[0].trim().replace(/"/g, '');
-            const valueStr = columns[1].trim().replace(/"/g, '');
-            
-            let date;
-            try {
-              if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
-                const parts = dateStr.split('/');
-                date = new Date(parts[2], parts[1] - 1, parts[0]);
-              } else {
-                date = new Date(dateStr);
-              }
-              if (isNaN(date.getTime())) continue;
-            } catch (e) {
-              continue;
+          if (columns.length < 2) continue;
+          
+          const dateStr = columns[0].trim().replace(/"/g, '');
+          const valueStr = columns[1].trim().replace(/"/g, '');
+          
+          let date;
+          try {
+            if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
+              const parts = dateStr.split('/');
+              date = new Date(parts[2], parts[1] - 1, parts[0]);
+            } else {
+              date = new Date(dateStr);
             }
-            
-            const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
-            const value = parseFloat(cleanedValue);
-            if (isNaN(value) || value <= 0) continue;
-            
-            const empresas = [];
-            for (let col = 3; col <= 32 && col < columns.length; col++) {
-              const empresaValueStr = columns[col]?.trim().replace(/"/g, '') || '0';
-              const empresaValue = parseFloat(empresaValueStr.replace(/\./g, '').replace(',', '.'));
-              empresas.push(isNaN(empresaValue) ? 0 : empresaValue);
-            }
-            
-            // Processa as ações individuais (colunas 138 a 268)
-            const acoesDia = [];
-            for (let col = 137; col <= 267 && col < columns.length; col++) {
-              const acaoValueStr = columns[col]?.trim().replace(/"/g, '') || '0';
-              const acaoValue = parseFloat(acaoValueStr.replace(/\./g, '').replace(',', '.'));
-              acoesDia.push(isNaN(acaoValue) ? 0 : acaoValue);
-            }
-            
-            allIbovespaData.push({
-              date: date,
-              dateStr: dateStr,
-              value: value,
-              formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-              empresas: empresas,
-              acoes: acoesDia
-            });
+            if (isNaN(date.getTime())) continue;
+          } catch (e) {
+            continue;
           }
+          
+          const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
+          const value = parseFloat(cleanedValue);
+          if (isNaN(value) || value <= 0) continue;
+          
+          // Empresas (col 3–32)
+          const empresas = [];
+          for (let col = 3; col <= 32 && col < columns.length; col++) {
+            const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
+            const val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
+            empresas.push(isNaN(val) ? 0 : val);
+          }
+          
+          // Ações individuais (col 138–267)
+          const acoesDia = [];
+          for (let col = 137; col <= 267 && col < columns.length; col++) {
+            const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
+            const val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
+            acoesDia.push(isNaN(val) ? 0 : val);
+          }
+          
+          // Setores (col 273–300)
+          const setoresDia = [];
+          for (let col = 273; col <= 300 && col < columns.length; col++) {
+            const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
+            const val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
+            setoresDia.push(isNaN(val) ? 0 : val);
+          }
+          
+          allIbovespaData.push({
+            date: date,
+            dateStr: dateStr,
+            value: value,
+            formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            empresas: empresas,
+            acoes: acoesDia,
+            setores: setoresDia
+          });
         }
         
         if (allIbovespaData.length === 0) throw new Error('Nenhum dado válido encontrado.');
@@ -811,7 +839,7 @@
         const lastRecord = allIbovespaData[allIbovespaData.length - 1];
         document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
         
-        // Carrega os pesos (grupos e individuais) passando o CSV já obtido
+        // Carrega pesos (grupos, ações e setores)
         loadWeightsData(csvText).then(() => {
           setupDateInputs();
           document.getElementById('periodControls').style.display = 'flex';
@@ -1281,7 +1309,6 @@
     function updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
       const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
-      // Calcula a contribuição de cada ação individual (colunas 138-268)
       const contribuicoesAcoes = [];
       
       for (let acaoIndex = 0; acaoIndex < 131; acaoIndex++) {
@@ -1308,18 +1335,13 @@
         });
       }
       
-      // Ordena por contribuição em pontos (da maior para a menor)
       contribuicoesAcoes.sort((a, b) => b.somaPontos - a.somaPontos);
-      
-      // Pega as 7 maiores contribuições
       const top7Acoes = contribuicoesAcoes.slice(0, 7);
       
       const tableBody = document.getElementById('contributionsTableBody2');
       tableBody.innerHTML = '';
       
-      // Adiciona as 7 ações COM O PESO BUSCADO NA COLUNA 301 (PROCV)
       top7Acoes.forEach(acao => {
-        // Normaliza o nome da ação para a busca no mapa
         const normalizedName = acao.nome.trim().replace(/\s+/g, ' ');
         let pesoAtual = '-';
         if (stockWeightsMap[normalizedName] !== undefined) {
@@ -1342,7 +1364,6 @@
         tableBody.appendChild(row);
       });
       
-      // Adiciona o Ibovespa como 8ª linha
       const ibovespaRow = document.createElement('tr');
       ibovespaRow.style.backgroundColor = '#f0f5ff';
       ibovespaRow.style.fontWeight = 'bold';
@@ -1364,83 +1385,68 @@
       document.getElementById('tableTitle2').style.display = 'block';
     }
     
+    // ***** TABELA 3 REFATORADA – SETORES (col 273–300) e pesos (col 305–306) *****
     function updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
-      const pesos = calculateGroupWeights();
       const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
-      const grupos = [
-        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, pesoRaw: pesos.soma5Raw },
-        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, pesoRaw: pesos.soma10Raw },
-        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, pesoRaw: pesos.soma15Raw },
-        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, pesoRaw: pesos.soma20Raw },
-        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, pesoRaw: pesos.soma25Raw },
-        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, pesoRaw: pesos.soma30Raw }
-      ];
+      const contribuicoesSetores = [];
       
-      let contribuicao30Maiores = 0;
-      let variacao30Maiores = 0;
-      
-      grupos.forEach(grupo => {
-        let somaEmpresas = 0;
+      // Itera sobre os 28 setores (colunas 273 a 300)
+      for (let setorIndex = 0; setorIndex < 28; setorIndex++) {
+        let somaSetor = 0;
         
         for (let i = 1; i < filteredData.length; i++) {
           const registro = filteredData[i];
-          if (registro.empresas && registro.empresas.length > 0) {
-            for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
-              somaEmpresas += registro.empresas[j] || 0;
-            }
+          if (registro.setores && registro.setores.length > setorIndex) {
+            somaSetor += registro.setores[setorIndex] || 0;
           }
         }
         
-        const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
-        const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
+        const variacaoPercentualSetor = (somaSetor / valorInicialIbovespa) * 100;
+        const contribuicaoPercentualSetor = (somaSetor / variacaoIbovespa) * 100;
         
-        if (grupo.nome === "30 Maiores Empresas") {
-          contribuicao30Maiores = contribuicaoPercentual;
-          variacao30Maiores = variacaoPercentual;
-        }
+        const nomeSetor = sectorNames[setorIndex] || `Setor ${setorIndex + 1}`;
         
-        grupo.contribuicao = contribuicaoPercentual;
-        grupo.variacao = variacaoPercentual;
-      });
+        contribuicoesSetores.push({
+          nome: nomeSetor,
+          somaPontos: somaSetor,
+          variacaoPercentual: variacaoPercentualSetor,
+          contribuicaoPercentual: contribuicaoPercentualSetor,
+          indice: setorIndex
+        });
+      }
       
-      const contribuicaoRestante = 100 - contribuicao30Maiores;
-      const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
+      // Ordena por contribuição em pontos (maior para menor)
+      contribuicoesSetores.sort((a, b) => b.somaPontos - a.somaPontos);
+      
+      // Pega os 7 maiores setores
+      const top7Setores = contribuicoesSetores.slice(0, 7);
       
       const tableBody = document.getElementById('contributionsTableBody3');
       tableBody.innerHTML = '';
       
-      grupos.forEach(grupo => {
+      top7Setores.forEach(setor => {
+        const normalizedName = setor.nome.trim().replace(/\s+/g, ' ');
+        let pesoAtual = '-';
+        if (sectorWeightsMap[normalizedName] !== undefined) {
+          pesoAtual = sectorWeightsMap[normalizedName].toFixed(2) + '%';
+        }
+        
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td class="group-cell">${grupo.nome}</td>
-          <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
-            ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
+          <td class="group-cell">${setor.nome}</td>
+          <td class="value-cell" style="color: ${setor.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+            ${setor.variacaoPercentual >= 0 ? '+' : ''}${setor.variacaoPercentual.toFixed(2)}%
           </td>
-          <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
-            ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
+          <td class="value-cell" style="color: ${setor.contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
+            ${setor.contribuicaoPercentual >= 0 ? '+' : ''}${setor.contribuicaoPercentual.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
-            ${grupo.pesoRaw.toFixed(2)}%
+            ${pesoAtual}
           </td>
         `;
         tableBody.appendChild(row);
       });
-      
-      const restanteRow = document.createElement('tr');
-      restanteRow.innerHTML = `
-        <td class="group-cell">Restante</td>
-        <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
-          ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
-          ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7">
-          ${pesos.somaRestanteRaw.toFixed(2)}%
-        </td>
-      `;
-      tableBody.appendChild(restanteRow);
       
       const ibovespaRow = document.createElement('tr');
       ibovespaRow.style.backgroundColor = '#f0f5ff';
@@ -1531,32 +1537,30 @@
       });
     }
     
+    // ---- Dados de exemplo (caso a planilha falhe) ----
     function loadSampleData() {
       allIbovespaData = [];
       acoesNames = [];
+      sectorNames = [];
       
-      // Gera nomes de exemplo para as ações (começando na coluna 138)
-      const nomesExemplo = ["VALE3", "PETR4", "ITUB4", "BBDC4", "ABEV3", "BBAS3", "WEGE3", "MGLU3", "RENT3", "SUZB3"];
+      const nomesExemploAcoes = ["VALE3", "PETR4", "ITUB4", "BBDC4", "ABEV3", "BBAS3", "WEGE3", "MGLU3", "RENT3", "SUZB3"];
       for (let i = 0; i < 131; i++) {
-        if (i < nomesExemplo.length) {
-          acoesNames.push(nomesExemplo[i]);
-        } else {
-          acoesNames.push(`Ação ${i + 1}`);
-        }
+        acoesNames.push(i < nomesExemploAcoes.length ? nomesExemploAcoes[i] : `Ação ${i + 1}`);
       }
       
-      // Mapa de pesos fictícios para o modo de exemplo
+      const nomesExemploSetores = ["Financeiro", "Mineração", "Petróleo", "Energia", "Siderurgia", "Varejo", "Alimentos", "Telecom", "Transporte", "Saúde", "Química", "Construção", "Papel", "Tecnologia", "Saneamento", "Seguros", "Educação", "Agronegócio", "Comércio", "Holding", "Logística", "Mídia", "Bebidas", "Turismo", "Metais", "Mecânica", "Farmacêutica", "Outros"];
+      for (let i = 0; i < 28; i++) {
+        sectorNames.push(i < nomesExemploSetores.length ? nomesExemploSetores[i] : `Setor ${i + 1}`);
+      }
+      
       stockWeightsMap = {
-        "VALE3": 12.5,
-        "PETR4": 10.2,
-        "ITUB4": 8.7,
-        "BBDC4": 6.3,
-        "ABEV3": 5.1,
-        "BBAS3": 4.8,
-        "WEGE3": 4.2,
-        "MGLU3": 3.9,
-        "RENT3": 3.5,
-        "SUZB3": 3.1
+        "VALE3": 12.5, "PETR4": 10.2, "ITUB4": 8.7, "BBDC4": 6.3, "ABEV3": 5.1,
+        "BBAS3": 4.8, "WEGE3": 4.2, "MGLU3": 3.9, "RENT3": 3.5, "SUZB3": 3.1
+      };
+      
+      sectorWeightsMap = {
+        "Financeiro": 22.3, "Mineração": 15.7, "Petróleo": 14.2, "Energia": 12.8, "Siderurgia": 8.5,
+        "Varejo": 6.3, "Alimentos": 5.9, "Telecom": 5.1, "Transporte": 4.8, "Saúde": 4.4
       };
       
       const startDate = new Date(2023, 0, 1);
@@ -1569,15 +1573,9 @@
         const randomChange = (Math.random() - 0.5) * 0.03;
         const value = i === 0 ? baseValue : allIbovespaData[i-1].value * (1 + randomChange);
         
-        const empresas = [];
-        for (let j = 0; j < 30; j++) {
-          empresas.push(1000 + Math.random() * 4000);
-        }
-        
-        const acoes = [];
-        for (let j = 0; j < 131; j++) {
-          acoes.push(100 + Math.random() * 400);
-        }
+        const empresas = Array.from({ length: 30 }, () => 1000 + Math.random() * 4000);
+        const acoes = Array.from({ length: 131 }, () => 100 + Math.random() * 400);
+        const setores = Array.from({ length: 28 }, () => 500 + Math.random() * 1500);
         
         allIbovespaData.push({
           date: currentDate,
@@ -1585,7 +1583,8 @@
           value: value,
           formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
           empresas: empresas,
-          acoes: acoes
+          acoes: acoes,
+          setores: setores
         });
       }
       
