@@ -632,6 +632,16 @@
       return isNaN(num) ? 0 : num;
     }
 
+    // Função para limpar nomes (remove aspas, espaços duplicados, caracteres iniciais não‑alfabéticos)
+    function cleanName(name) {
+      if (!name) return '';
+      return name
+        .replace(/"/g, '')
+        .replace(/\s+/g, ' ')
+        .replace(/^[\d\s\-\.]+/, '') // remove dígitos, espaços, traços e pontos no início
+        .trim();
+    }
+
     function processWeightsCSVData(csvText) {
       try {
         const linhas = csvText.split("\n").map(l => {
@@ -678,7 +688,7 @@
           if (row.length > 301) {
             const stockNameRaw = row[300] ? row[300].replace(/"/g, '').trim() : '';
             if (stockNameRaw !== '') {
-              const stockName = stockNameRaw.replace(/\s+/g, ' ').trim();
+              const stockName = cleanName(stockNameRaw);
               const weightStr = row[301] ? row[301].replace(/"/g, '').trim() : '';
               if (weightStr !== '') {
                 const weight = parseWeightValue(weightStr);
@@ -695,7 +705,7 @@
           if (row.length > 306) {
             const sectorNameRaw = row[305] ? row[305].replace(/"/g, '').trim() : '';
             if (sectorNameRaw !== '') {
-              const sectorName = sectorNameRaw.replace(/\s+/g, ' ').trim();
+              const sectorName = cleanName(sectorNameRaw);
               const weightStr = row[306] ? row[306].replace(/"/g, '').trim() : '';
               if (weightStr !== '') {
                 const weight = parseWeightValue(weightStr);
@@ -727,8 +737,7 @@
           // Nomes das ações (col 137 a 267)
           for (let col = 137; col <= 267 && col < colunasSegundaLinha.length; col++) {
             let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
-            nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
-            nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
+            nomeAcao = cleanName(nomeAcao);
             if (!nomeAcao || nomeAcao === '') nomeAcao = `Ação ${col - 137}`;
             acoesNames.push(nomeAcao);
           }
@@ -736,8 +745,7 @@
           // Nomes dos setores (col 273 a 300)
           for (let col = 273; col <= 300 && col < colunasSegundaLinha.length; col++) {
             let nomeSetor = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Setor ${col - 272}`;
-            nomeSetor = nomeSetor.replace(/\s+/g, ' ').trim();
-            nomeSetor = nomeSetor.replace(/^[\d\s\-\.]+/, '').trim();
+            nomeSetor = cleanName(nomeSetor);
             if (!nomeSetor || nomeSetor === '') nomeSetor = `Setor ${col - 272}`;
             sectorNames.push(nomeSetor);
           }
@@ -1342,7 +1350,7 @@
       tableBody.innerHTML = '';
       
       top7Acoes.forEach(acao => {
-        const normalizedName = acao.nome.trim().replace(/\s+/g, ' ');
+        const normalizedName = acao.nome; // já limpo
         let pesoAtual = '-';
         if (stockWeightsMap[normalizedName] !== undefined) {
           pesoAtual = stockWeightsMap[normalizedName].toFixed(2) + '%';
@@ -1426,7 +1434,7 @@
       tableBody.innerHTML = '';
       
       top7Setores.forEach(setor => {
-        const normalizedName = setor.nome.trim().replace(/\s+/g, ' ');
+        const normalizedName = setor.nome; // já limpo
         let pesoAtual = '-';
         if (sectorWeightsMap[normalizedName] !== undefined) {
           pesoAtual = sectorWeightsMap[normalizedName].toFixed(2) + '%';
