@@ -5,6 +5,7 @@
   <title>Simon</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    /* ESTILOS – mantidos exatamente iguais ao original */
     html, body {
       margin: 0;
       padding: 0;
@@ -158,7 +159,7 @@
       display: none;
       background: white;
       padding: 2px 4px;
-          border-radius: 3px;
+      border-radius: 3px;
       border: 1px solid #ff0000;
       z-index: 10;
       white-space: nowrap;
@@ -248,7 +249,7 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      margin-right = 8px;
+      margin-right: 8px;
       display: inline-block;
     }
 
@@ -496,6 +497,9 @@
     let weightsMap = null;
     let acoesNames = []; // Array para armazenar nomes das ações (linha 2 da planilha)
     
+    // NOVO: mapa para armazenar os pesos individuais das ações (PROCV col300 -> col301)
+    let stockWeightsMap = {};
+
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
     let customTooltip = null;
 
@@ -599,21 +603,38 @@
       }
     }
 
-    async function loadWeightsData() {
+    async function loadWeightsData(csvText) {
       try {
-        const response = await fetch(SPREADSHEET_URL);
-        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
-        
-        const csvText = await response.text();
+        // Se não recebermos o csvText, fazemos uma nova requisição
+        if (!csvText) {
+          const response = await fetch(SPREADSHEET_URL);
+          if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+          csvText = await response.text();
+        }
         processWeightsCSVData(csvText);
-        
       } catch (error) {
         weightsMap = null;
+        stockWeightsMap = {};
       }
+    }
+
+    // Função auxiliar para parsear valores numéricos (suporta vírgula, ponto, %)
+    function parseWeightValue(value) {
+      if (!value) return 0;
+      let cleanValue = value.toString().replace(/"/g, '').trim();
+      // Remove símbolo de porcentagem se existir
+      cleanValue = cleanValue.replace('%', '');
+      // Se houver vírgula como separador decimal, converte
+      if (cleanValue.includes(',')) {
+        cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+      }
+      const num = parseFloat(cleanValue);
+      return isNaN(num) ? 0 : num;
     }
 
     function processWeightsCSVData(csvText) {
       try {
+        // Parse de todas as linhas do CSV
         const linhas = csvText.split("\n").map(l => {
           let result = [];
           let current = '';
@@ -630,13 +651,12 @@
               current += char;
             }
           }
-          
           result.push(current);
           return result;
         });
         
+        // --- PESOS DOS GRUPOS (coluna 308, linhas 1 a 6) ---
         const colunaKW = 308;
-        
         const dados = {
           soma5Raw: linhas[1] && linhas[1][colunaKW] ? parseWeightValue(linhas[1][colunaKW]) : 0,
           soma10Raw: linhas[2] && linhas[2][colunaKW] ? parseWeightValue(linhas[2][colunaKW]) : 0,
@@ -654,29 +674,32 @@
         
         dados.somaRestanteRaw = 100 - dados.soma30Raw;
         weightsMap = dados;
+        
+        // --- NOVO: PESOS INDIVIDUAIS DAS AÇÕES (coluna 300 -> coluna 301) ---
+        stockWeightsMap = {};
+        for (let i = 0; i < linhas.length; i++) {
+          const row = linhas[i];
+          // Verifica se a linha possui ao menos a coluna 301
+          if (row.length > 301) {
+            const stockNameRaw = row[300] ? row[300].replace(/"/g, '').trim() : '';
+            if (stockNameRaw !== '') {
+              // Normaliza o nome (remove espaços extras)
+              const stockName = stockNameRaw.replace(/\s+/g, ' ').trim();
+              const weightStr = row[301] ? row[301].replace(/"/g, '').trim() : '';
+              if (weightStr !== '') {
+                const weight = parseWeightValue(weightStr);
+                if (!isNaN(weight)) {
+                  stockWeightsMap[stockName] = weight;
+                }
+              }
+            }
+          }
+        }
 
       } catch (error) {
         weightsMap = null;
+        stockWeightsMap = {};
       }
-    }
-    
-    function parseWeightValue(value) {
-      if (!value) return 0;
-      
-      let cleanValue = value.toString().replace(/"/g, '').trim();
-      
-      if (!isNaN(cleanValue) && cleanValue !== '') {
-        return parseFloat(cleanValue);
-      }
-      
-      if (cleanValue.includes(',')) {
-        cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(cleanValue);
-        return isNaN(num) ? 0 : num;
-      }
-      
-      const num = parseFloat(cleanValue);
-      return isNaN(num) ? 0 : num;
     }
 
     function processCSVData(csvText) {
@@ -687,19 +710,17 @@
         
         // Primeiro, extrai os nomes das ações da SEGUNDA linha (índice 1)
         if (lines.length > 1) {
-          const segundaLinha = lines[1]; // Linha 2 da planilha
+          const segundaLinha = lines[1];
           const colunasSegundaLinha = parseCSVLine(segundaLinha);
           
-          // Colunas 138 a 268 (índices 137 a 267) - AGORA começando na coluna 138
+          // Colunas 138 a 268 (índices 137 a 267)
           for (let col = 137; col <= 267 && col < colunasSegundaLinha.length; col++) {
-            let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`; // Ajustado para -137
+            let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
             nomeAcao = nomeAcao.replace(/\s+/g, ' ').trim();
-            
-            // Remove prefixos comuns que podem ser lixo
             nomeAcao = nomeAcao.replace(/^[\d\s\-\.]+/, '').trim();
             
             if (!nomeAcao || nomeAcao === '') {
-              nomeAcao = `Ação ${col - 137}`; // Ajustado para -137
+              nomeAcao = `Ação ${col - 137}`;
             }
             
             acoesNames.push(nomeAcao);
@@ -713,16 +734,14 @@
           }
         }
         
-        // Agora encontra onde começam os dados
+        // Encontra onde começam os dados
         let startIndex = -1;
-        
         for (let i = 0; i < lines.length; i++) {
           if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
             startIndex = i;
             break;
           }
         }
-        
         if (startIndex === -1) {
           for (let i = 0; i < lines.length; i++) {
             if (lines[i].match(/\d{1,2}\/\d{1,2}\/\d{4}/) && lines[i].match(/\d+\.?\d*/)) {
@@ -731,16 +750,13 @@
             }
           }
         }
-        
         if (startIndex === -1) startIndex = 1;
         
         for (let i = startIndex; i < lines.length; i++) {
           const line = lines[i].trim();
-          
           if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) continue;
           
           let columns = parseCSVLine(line);
-          
           if (columns.length >= 2) {
             const dateStr = columns[0].trim().replace(/"/g, '');
             const valueStr = columns[1].trim().replace(/"/g, '');
@@ -753,7 +769,6 @@
               } else {
                 date = new Date(dateStr);
               }
-              
               if (isNaN(date.getTime())) continue;
             } catch (e) {
               continue;
@@ -761,7 +776,6 @@
             
             const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
             const value = parseFloat(cleanedValue);
-            
             if (isNaN(value) || value <= 0) continue;
             
             const empresas = [];
@@ -771,7 +785,7 @@
               empresas.push(isNaN(empresaValue) ? 0 : empresaValue);
             }
             
-            // Processa as ações individuais (colunas 138 a 268) - Dados começam na coluna 138
+            // Processa as ações individuais (colunas 138 a 268)
             const acoesDia = [];
             for (let col = 137; col <= 267 && col < columns.length; col++) {
               const acaoValueStr = columns[col]?.trim().replace(/"/g, '') || '0';
@@ -797,7 +811,8 @@
         const lastRecord = allIbovespaData[allIbovespaData.length - 1];
         document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
         
-        loadWeightsData().then(() => {
+        // Carrega os pesos (grupos e individuais) passando o CSV já obtido
+        loadWeightsData(csvText).then(() => {
           setupDateInputs();
           document.getElementById('periodControls').style.display = 'flex';
           document.getElementById('loadingIndicator').style.display = 'none';
@@ -911,7 +926,6 @@
           current += char;
         }
       }
-      
       result.push(current);
       return result;
     }
@@ -1160,13 +1174,8 @@
         return;
       }
       
-      // Tabela 1: Maiores empresas (mantém a lógica original)
       updateTable1(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
-      
-      // Tabela 2: Maiores contribuições - Ações individuais
       updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
-      
-      // Tabela 3: Maiores contribuições - Setores (mantém a mesma lógica da tabela 1)
       updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
     }
     
@@ -1275,11 +1284,9 @@
       // Calcula a contribuição de cada ação individual (colunas 138-268)
       const contribuicoesAcoes = [];
       
-      // Para cada ação (0-130, correspondendo às colunas 138-268)
       for (let acaoIndex = 0; acaoIndex < 131; acaoIndex++) {
         let somaAcao = 0;
         
-        // Soma a contribuição desta ação em todos os dias do período
         for (let i = 1; i < filteredData.length; i++) {
           const registro = filteredData[i];
           if (registro.acoes && registro.acoes.length > acaoIndex) {
@@ -1287,11 +1294,9 @@
           }
         }
         
-        // Calcula os percentuais
         const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
         const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
         
-        // Pega o nome da ação do array acoesNames
         const nomeAcao = acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`;
         
         contribuicoesAcoes.push({
@@ -1312,8 +1317,15 @@
       const tableBody = document.getElementById('contributionsTableBody2');
       tableBody.innerHTML = '';
       
-      // Adiciona as 7 ações
+      // Adiciona as 7 ações COM O PESO BUSCADO NA COLUNA 301 (PROCV)
       top7Acoes.forEach(acao => {
+        // Normaliza o nome da ação para a busca no mapa
+        const normalizedName = acao.nome.trim().replace(/\s+/g, ' ');
+        let pesoAtual = '-';
+        if (stockWeightsMap[normalizedName] !== undefined) {
+          pesoAtual = stockWeightsMap[normalizedName].toFixed(2) + '%';
+        }
+        
         const row = document.createElement('tr');
         row.innerHTML = `
           <td class="group-cell">${acao.nome}</td>
@@ -1324,7 +1336,7 @@
             ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}%
           </td>
           <td class="value-cell" style="color: #1E4DB7">
-            -
+            ${pesoAtual}
           </td>
         `;
         tableBody.appendChild(row);
@@ -1532,6 +1544,20 @@
           acoesNames.push(`Ação ${i + 1}`);
         }
       }
+      
+      // Mapa de pesos fictícios para o modo de exemplo
+      stockWeightsMap = {
+        "VALE3": 12.5,
+        "PETR4": 10.2,
+        "ITUB4": 8.7,
+        "BBDC4": 6.3,
+        "ABEV3": 5.1,
+        "BBAS3": 4.8,
+        "WEGE3": 4.2,
+        "MGLU3": 3.9,
+        "RENT3": 3.5,
+        "SUZB3": 3.1
+      };
       
       const startDate = new Date(2023, 0, 1);
       const baseValue = 100000;
