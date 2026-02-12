@@ -5,6 +5,28 @@
   <title>Simon</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    /* ----- NOVA NAVBAR PRETA ----- */
+    .navbar {
+      background-color: #000;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 30px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 16px;
+    }
+    .navbar a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
+    }
+    .navbar a:hover {
+      opacity: 0.8;
+    }
+    /* ----- FIM DA NAVBAR NOVA ----- */
+
     /* ESTILOS – mantidos exatamente iguais ao original */
     html, body {
       margin: 0;
@@ -396,6 +418,12 @@
   </style>
 </head>
 <body>
+  <!-- NOVA NAVBAR PRETA -->
+  <nav class="navbar">
+    <a href="index.html">Histórico</a>
+    <a href="hoje.html">Hoje</a>
+  </nav>
+
   <div class="container">
     <div class="header-info">
       <h1>Ibovespa - Atribuição de Performance</h1>
