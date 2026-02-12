@@ -500,7 +500,7 @@
     
     // Pesos individuais das ações (PROCV col300 -> col301)
     let stockWeightsMap = {};
-    // Pesos individuais dos setores (PROCV col305 -> col306)
+    // Pesos individuais dos setores (PROCV col304 -> col305) ← CORRIGIDO!
     let sectorWeightsMap = {};
 
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
@@ -698,15 +698,15 @@
           }
         }
 
-        // --- PESOS INDIVIDUAIS DOS SETORES (coluna 305 -> coluna 306) ---
+        // --- PESOS INDIVIDUAIS DOS SETORES (coluna 304 -> coluna 305) --- CORRIGIDO!
         sectorWeightsMap = {};
         for (let i = 0; i < linhas.length; i++) {
           const row = linhas[i];
-          if (row.length > 306) {
-            const sectorNameRaw = row[305] ? row[305].replace(/"/g, '').trim() : '';
+          if (row.length > 306) { // ainda precisamos garantir que o array tenha pelo menos 306 elementos (índice 305)
+            const sectorNameRaw = row[304] ? row[304].replace(/"/g, '').trim() : ''; // coluna 305 → índice 304
             if (sectorNameRaw !== '') {
               const sectorName = cleanName(sectorNameRaw);
-              const weightStr = row[306] ? row[306].replace(/"/g, '').trim() : '';
+              const weightStr = row[305] ? row[305].replace(/"/g, '').trim() : ''; // coluna 306 → índice 305
               if (weightStr !== '') {
                 const weight = parseWeightValue(weightStr);
                 if (!isNaN(weight)) sectorWeightsMap[sectorName] = weight;
@@ -734,7 +734,7 @@
           const segundaLinha = lines[1];
           const colunasSegundaLinha = parseCSVLine(segundaLinha);
           
-          // Nomes das ações (col 137 a 267)
+          // Nomes das ações (col 137 a 267) - índice 137 a 267
           for (let col = 137; col <= 267 && col < colunasSegundaLinha.length; col++) {
             let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
             nomeAcao = cleanName(nomeAcao);
@@ -742,7 +742,7 @@
             acoesNames.push(nomeAcao);
           }
           
-          // Nomes dos setores (col 273 a 300)
+          // Nomes dos setores (col 273 a 300) - índice 273 a 300
           for (let col = 273; col <= 300 && col < colunasSegundaLinha.length; col++) {
             let nomeSetor = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Setor ${col - 272}`;
             nomeSetor = cleanName(nomeSetor);
@@ -805,7 +805,7 @@
           const value = parseFloat(cleanedValue);
           if (isNaN(value) || value <= 0) continue;
           
-          // Empresas (col 3–32)
+          // Empresas (col 3–32) - índice 3 a 32
           const empresas = [];
           for (let col = 3; col <= 32 && col < columns.length; col++) {
             const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
@@ -813,7 +813,7 @@
             empresas.push(isNaN(val) ? 0 : val);
           }
           
-          // Ações individuais (col 138–267)
+          // Ações individuais (col 138–267) - índice 138 a 267
           const acoesDia = [];
           for (let col = 137; col <= 267 && col < columns.length; col++) {
             const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
@@ -821,7 +821,7 @@
             acoesDia.push(isNaN(val) ? 0 : val);
           }
           
-          // Setores (col 273–300)
+          // Setores (col 273–300) - índice 273 a 300
           const setoresDia = [];
           for (let col = 273; col <= 300 && col < columns.length; col++) {
             const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
@@ -1393,7 +1393,7 @@
       document.getElementById('tableTitle2').style.display = 'block';
     }
     
-    // ***** TABELA 3 REFATORADA – SETORES (col 273–300) e pesos (col 305–306) *****
+    // ***** TABELA 3 REFATORADA – SETORES (col 273–300) e pesos (col 304–305) *****
     function updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
       const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
