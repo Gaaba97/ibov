@@ -112,53 +112,105 @@ Acompanhamento Diário - Ibovespa
 </div>
 
 <script>
-
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
 
+// Parser CSV simples que lida com campos entre aspas
+function parseCSV(texto) {
+  const linhas = [];
+  let linhaAtual = [];
+  let campo = '';
+  let dentroAspas = false;
+
+  for (let i = 0; i < texto.length; i++) {
+    let char = texto[i];
+    let proximo = texto[i + 1];
+
+    if (dentroAspas) {
+      if (char === '"' && proximo === '"') {
+        // aspas escapadas (duas aspas seguidas)
+        campo += '"';
+        i++; // pula a próxima aspa
+      } else if (char === '"') {
+        // fechamento de aspas
+        dentroAspas = false;
+      } else {
+        campo += char;
+      }
+    } else {
+      if (char === '"') {
+        dentroAspas = true;
+      } else if (char === ',') {
+        // fim de campo
+        linhaAtual.push(campo);
+        campo = '';
+      } else if (char === '\n' || char === '\r') {
+        // fim de linha
+        if (char === '\r' && proximo === '\n') {
+          i++; // pula o \n depois do \r
+        }
+        linhaAtual.push(campo);
+        linhas.push(linhaAtual);
+        linhaAtual = [];
+        campo = '';
+      } else {
+        campo += char;
+      }
+    }
+  }
+
+  // adiciona última linha se houver conteúdo pendente
+  if (campo || linhaAtual.length > 0) {
+    linhaAtual.push(campo);
+    linhas.push(linhaAtual);
+  }
+
+  return linhas;
+}
+
 async function carregarDados() {
-
-    const response = await fetch(CSV_URL);
-    const csvText = await response.text();
-
-    // separa linhas
-    const linhas = csvText.split("\n");
+  try {
+    const resposta = await fetch(CSV_URL);
+    const csvTexto = await resposta.text();
+    // Remove BOM (Byte Order Mark) se existir
+    const csvLimpo = csvTexto.replace(/^\uFEFF/, '');
+    const linhas = parseCSV(csvLimpo);
 
     const tbody = document.getElementById("tabelaHojeBody");
-
     tbody.innerHTML = "";
 
-    linhas.forEach((linha, index) => {
-
-        // pula header se existir
-        if(index === 0) return;
-
-        const colunas = linha.split(",");
-
-        // pega coluna 300 (index zero-based)
-        const acao = colunas[300];
-
-        // ignora linhas vazias
-        if(!acao) return;
-
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
+    // Começa do índice 1 para pular o cabeçalho do CSV (assumindo que a primeira linha é cabeçalho)
+    for (let i = 1; i < linhas.length; i++) {
+      const linha = linhas[i];
+      // Verifica se a linha tem pelo menos 301 colunas (índice 300 existe)
+      if (linha.length > 300) {
+        let acao = linha[300] ? linha[300].trim() : '';
+        if (acao !== '') {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
             <td>${acao}</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
-        `;
+          `;
+          tbody.appendChild(tr);
+        }
+      }
+    }
 
-        tbody.appendChild(tr);
-
-    });
-
+    // Se nenhuma linha foi adicionada, mostra mensagem
+    if (tbody.children.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhum dado encontrado na coluna 300</td></tr>';
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar dados:", erro);
+    const tbody = document.getElementById("tabelaHojeBody");
+    tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Erro ao carregar dados. Verifique o console.</td></tr>';
+  }
 }
 
 carregarDados();
-
 </script>
 
 </body>
