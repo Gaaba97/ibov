@@ -34,21 +34,33 @@ html, body {
   width:95%;
   max-width:1400px;
   margin:30px auto;
+  text-align:center; /* centraliza o conteúdo inline-block */
 }
 
 .ibovespa-box {
   border: 1px solid #000;
-  padding: 15px 20px;
+  padding: 15px 30px;
   margin-bottom: 25px;
   display: inline-block;
   font-family: "Montserrat", sans-serif;
   background-color: #f9f9f9;
   border-radius: 4px;
+  text-align: left; /* para o texto interno ficar alinhado à esquerda, mas pode ser centralizado se preferir */
 }
 
-.ibovespa-box span {
+.ibovespa-box div {
+  margin: 5px 0;
+}
+
+.ibovespa-box .label {
+  font-weight: 500;
+  color: #333;
+}
+
+.ibovespa-box .value {
   font-weight: 700;
   color: #164CAD;
+  margin-left: 10px;
 }
 
 .table-title {
@@ -101,7 +113,8 @@ html, body {
 
 <!-- Quadro da Variação do Ibovespa -->
 <div id="ibovespaBox" class="ibovespa-box">
-  Carregando...
+  <div><span class="label">Ibovespa Hoje:</span> <span class="value" id="ibovespaValor">carregando...</span></div>
+  <div><span class="label">Variação:</span> <span class="value" id="ibovespaVar">carregando...</span></div>
 </div>
 
 <div class="table-title">
@@ -203,7 +216,13 @@ function formatarPercentual(valor) {
     num = extrairNumero(valor);
   }
   if (isNaN(num)) return '-';
-  return num.toFixed(2) + '%';
+  return num.toFixed(2).replace('.', ',') + '%';
+}
+
+// Formata número no padrão brasileiro: 1.234,56
+function formatarNumeroBR(num) {
+  if (isNaN(num)) return '-';
+  return num.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 async function carregarDados() {
@@ -231,19 +250,26 @@ async function carregarDados() {
       return;
     }
 
+    // --- Extrair valor do Ibovespa (linha 198, coluna 1) ---
+    let ibovespaValorNum = NaN;
+    if (linhasVar.length > 198) {
+      const valor = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
+      ibovespaValorNum = extrairNumero(valor);
+    }
+    document.getElementById("ibovespaValor").innerText = formatarNumeroBR(ibovespaValorNum);
+
     // --- Cálculo da Variação do Ibovespa (linhas 198 e 199, coluna 1) ---
-    let variacaoIbovespa = '-';
-    if (linhasVar.length > 199) { // precisa ter pelo menos até linha 199
+    let variacaoIbovespaNum = NaN;
+    if (linhasVar.length > 199) {
       const valor1 = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
       const valor2 = linhasVar[199] && linhasVar[199].length > 1 ? linhasVar[199][1] : null;
       const num1 = extrairNumero(valor1);
       const num2 = extrairNumero(valor2);
       if (!isNaN(num1) && !isNaN(num2) && num2 !== 0) {
-        variacaoIbovespa = ((num1 / num2) - 1) * 100; // calcula variação percentual
+        variacaoIbovespaNum = ((num1 / num2) - 1) * 100;
       }
     }
-    const ibovespaBox = document.getElementById("ibovespaBox");
-    ibovespaBox.innerHTML = `Variação do Ibovespa Hoje: <span>${formatarPercentual(variacaoIbovespa)}</span>`;
+    document.getElementById("ibovespaVar").innerText = formatarPercentual(variacaoIbovespaNum);
 
     // --- Mapa ação -> setor a partir das colunas 138..268 (linhas 0 e 1) da planilha principal ---
     const acaoParaSetor = {};
@@ -294,11 +320,7 @@ async function carregarDados() {
           const variacaoNum = extrairNumero(variacaoRaw);
           const variacaoFormatada = formatarPercentual(variacaoNum);
 
-          // Contribuição (quinta coluna) = peso * variação / 100? 
-          // Como peso já está em percentual (ex: 1.23%) e variação também (ex: 0.56%),
-          // a contribuição em pontos percentuais é (peso * variação) / 100.
-          // Mas a fórmula exata pode variar. Vamos assumir que a contribuição é o produto dos dois valores percentuais dividido por 100 para obter o impacto em percentual do ibovespa.
-          // Se o usuário quiser apenas o produto, é só ajustar. Por enquanto farei (pesoNum * variacaoNum) / 100.
+          // Contribuição (quinta coluna) = peso * variação / 100
           let contribuicaoNum = NaN;
           if (!isNaN(pesoNum) && !isNaN(variacaoNum)) {
             contribuicaoNum = (pesoNum * variacaoNum) / 100;
@@ -328,8 +350,8 @@ async function carregarDados() {
     console.error("Erro ao carregar dados:", erro);
     const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Erro ao carregar dados. Verifique o console.</td></tr>';
-    const ibovespaBox = document.getElementById("ibovespaBox");
-    ibovespaBox.innerHTML = 'Variação do Ibovespa Hoje: <span>Erro</span>';
+    document.getElementById("ibovespaValor").innerText = 'Erro';
+    document.getElementById("ibovespaVar").innerText = 'Erro';
   }
 }
 
