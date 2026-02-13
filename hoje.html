@@ -127,11 +127,10 @@ function parseCSV(texto) {
 
     if (dentroAspas) {
       if (char === '"' && proximo === '"') {
-        // aspas escapadas (duas aspas seguidas)
+        // aspas escapadas
         campo += '"';
-        i++; // pula a próxima aspa
+        i++;
       } else if (char === '"') {
-        // fechamento de aspas
         dentroAspas = false;
       } else {
         campo += char;
@@ -140,14 +139,10 @@ function parseCSV(texto) {
       if (char === '"') {
         dentroAspas = true;
       } else if (char === ',') {
-        // fim de campo
         linhaAtual.push(campo);
         campo = '';
       } else if (char === '\n' || char === '\r') {
-        // fim de linha
-        if (char === '\r' && proximo === '\n') {
-          i++; // pula o \n depois do \r
-        }
+        if (char === '\r' && proximo === '\n') i++;
         linhaAtual.push(campo);
         linhas.push(linhaAtual);
         linhaAtual = [];
@@ -158,7 +153,6 @@ function parseCSV(texto) {
     }
   }
 
-  // adiciona última linha se houver conteúdo pendente
   if (campo || linhaAtual.length > 0) {
     linhaAtual.push(campo);
     linhas.push(linhaAtual);
@@ -171,38 +165,67 @@ async function carregarDados() {
   try {
     const resposta = await fetch(CSV_URL);
     const csvTexto = await resposta.text();
-    // Remove BOM (Byte Order Mark) se existir
     const csvLimpo = csvTexto.replace(/^\uFEFF/, '');
     const linhas = parseCSV(csvLimpo);
 
     const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = "";
 
-    // Começa do índice 1 para pular o cabeçalho do CSV (assumindo que a primeira linha é cabeçalho)
-    for (let i = 1; i < linhas.length; i++) {
+    // Verifica se existem pelo menos duas linhas (cabeçalho e linha de mapeamento)
+    if (linhas.length < 2) {
+      tbody.innerHTML = '<tr><td colspan="6">Arquivo CSV com poucas linhas</td></tr>';
+      return;
+    }
+
+    // --- Construir mapa ação -> setor a partir das colunas 139..268 (inclusive) ---
+    const acaoParaSetor = {};
+
+    // linha 0 (índice 0) contém os setores (cabeçalho)
+    // linha 1 (índice 1) contém os códigos das ações correspondentes
+    const linhaSetor = linhas[0];   // linha 0
+    const linhaCodigo = linhas[1];  // linha 1
+
+    // Índices das colunas (base 0): 139 a 268
+    for (let col = 139; col <= 268; col++) {
+      // Verifica se ambas as linhas têm essa coluna
+      if (linhaCodigo.length > col && linhaSetor.length > col) {
+        const codigo = linhaCodigo[col] ? linhaCodigo[col].trim() : '';
+        const setor = linhaSetor[col] ? linhaSetor[col].trim() : '';
+        if (codigo !== '' && setor !== '') {
+          acaoParaSetor[codigo] = setor;
+        }
+      }
+    }
+
+    // --- Preencher a tabela com os dados da coluna 300 (ações) e seus setores ---
+    let linhasAdicionadas = 0;
+
+    // Começa da linha 2 (índice 2) para pular as duas primeiras linhas (mapeamento)
+    for (let i = 2; i < linhas.length; i++) {
       const linha = linhas[i];
-      // Verifica se a linha tem pelo menos 301 colunas (índice 300 existe)
       if (linha.length > 300) {
-        let acao = linha[300] ? linha[300].trim() : '';
+        const acao = linha[300] ? linha[300].trim() : '';
         if (acao !== '') {
+          const setor = acaoParaSetor[acao] || '-';
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${acao}</td>
-            <td>-</td>
+            <td>${setor}</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
           `;
           tbody.appendChild(tr);
+          linhasAdicionadas++;
         }
       }
     }
 
-    // Se nenhuma linha foi adicionada, mostra mensagem
-    if (tbody.children.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">Nenhum dado encontrado na coluna 300</td></tr>';
+    if (linhasAdicionadas === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhuma ação encontrada na coluna 300</td></tr>';
     }
+
   } catch (erro) {
     console.error("Erro ao carregar dados:", erro);
     const tbody = document.getElementById("tabelaHojeBody");
