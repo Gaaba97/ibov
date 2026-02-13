@@ -171,7 +171,7 @@ async function carregarDados() {
     const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = "";
 
-    // Verifica se existem pelo menos duas linhas (cabeçalho e linha de mapeamento)
+    // Verifica se existem pelo menos duas linhas para o mapeamento
     if (linhas.length < 2) {
       tbody.innerHTML = '<tr><td colspan="6">Arquivo CSV com poucas linhas</td></tr>';
       return;
@@ -197,15 +197,17 @@ async function carregarDados() {
       }
     }
 
-    // --- Preencher a tabela com os dados da coluna 300 (ações) e seus setores ---
+    // --- Preencher a tabela com os dados da coluna 300 (ações) de TODAS as linhas ---
     let linhasAdicionadas = 0;
 
-    // Começa da linha 2 (índice 2) para pular as duas primeiras linhas (mapeamento)
-    for (let i = 2; i < linhas.length; i++) {
+    // Agora percorremos todas as linhas do CSV (índice 0 até o fim)
+    for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i];
+      // Verifica se a linha tem pelo menos 301 colunas (índice 300 existe)
       if (linha.length > 300) {
         const acao = linha[300] ? linha[300].trim() : '';
         if (acao !== '') {
+          // Busca o setor no mapa
           const setor = acaoParaSetor[acao] || '-';
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -224,6 +226,8 @@ async function carregarDados() {
 
     if (linhasAdicionadas === 0) {
       tbody.innerHTML = '<tr><td colspan="6">Nenhuma ação encontrada na coluna 300</td></tr>';
+    } else {
+      console.log(`Total de ações encontradas: ${linhasAdicionadas}`);
     }
 
   } catch (erro) {
