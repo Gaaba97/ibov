@@ -112,8 +112,10 @@ Acompanhamento Diário - Ibovespa
 </div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
+const CSV_URL_PRINCIPAL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
+const CSV_URL_VAR = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwmjzKT5EHJS3McU2_42R-MI6uR4cdm04GeeQ9RBxhprOwSkl9xIx01rZvweCtl3quo2rBNNtNE2AB/pub?output=csv";
 
+// Parser CSV simples que lida com campos entre aspas
 function parseCSV(texto) {
   const linhas = [];
   let linhaAtual = [];
@@ -159,8 +161,9 @@ function parseCSV(texto) {
   return linhas;
 }
 
-function formatarPeso(valor) {
+function formatarPercentual(valor) {
   if (!valor || valor.trim() === '') return '-';
+  // Substitui vírgula por ponto para conversão numérica
   const numStr = valor.trim().replace(',', '.');
   const num = parseFloat(numStr);
   if (isNaN(num)) return '-';
@@ -169,23 +172,33 @@ function formatarPeso(valor) {
 
 async function carregarDados() {
   try {
-    const resposta = await fetch(CSV_URL);
-    const csvTexto = await resposta.text();
-    const csvLimpo = csvTexto.replace(/^\uFEFF/, '');
-    const linhas = parseCSV(csvLimpo);
+    // Carregar ambas as planilhas em paralelo
+    const [respostaPrincipal, respostaVar] = await Promise.all([
+      fetch(CSV_URL_PRINCIPAL),
+      fetch(CSV_URL_VAR)
+    ]);
+
+    const csvPrincipal = await respostaPrincipal.text();
+    const csvVar = await respostaVar.text();
+
+    const csvPrincipalLimpo = csvPrincipal.replace(/^\uFEFF/, '');
+    const csvVarLimpo = csvVar.replace(/^\uFEFF/, '');
+
+    const linhasPrincipal = parseCSV(csvPrincipalLimpo);
+    const linhasVar = parseCSV(csvVarLimpo);
 
     const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = "";
 
-    if (linhas.length < 2) {
-      tbody.innerHTML = '<tr><td colspan="6">Arquivo CSV com poucas linhas</td></tr>';
+    if (linhasPrincipal.length < 2) {
+      tbody.innerHTML = '<tr><td colspan="6">Arquivo principal com poucas linhas</td></tr>';
       return;
     }
 
-    // --- Mapa ação -> setor a partir das colunas 138..268 (linhas 0 e 1) ---
+    // --- Mapa ação -> setor a partir das colunas 138..268 (linhas 0 e 1) da planilha principal ---
     const acaoParaSetor = {};
-    const linhaSetor = linhas[0];   // linha 0: setores
-    const linhaCodigo = linhas[1];  // linha 1: códigos
+    const linhaSetor = linhasPrincipal[0];   // linha 0: setores
+    const linhaCodigo = linhasPrincipal[1];  // linha 1: códigos
 
     for (let col = 138; col <= 268; col++) {
       if (linhaCodigo.length > col && linhaSetor.length > col) {
@@ -197,24 +210,42 @@ async function carregarDados() {
       }
     }
 
-    // --- Agora vamos extrair as ações de TODAS as linhas, incluindo linha 0 e 1 ---
+    // --- Mapa ação -> variação a partir da segunda planilha (coluna 0 -> coluna 1) ---
+    const acaoParaVariacao = {};
+    // Assume que a primeira linha é cabeçalho e a partir da linha 1 (índice 1) são dados
+    for (let i = 1; i < linhasVar.length; i++) {
+      const linha = linhasVar[i];
+      if (linha.length >= 2) {
+        const acao = linha[0] ? linha[0].trim() : '';
+        const variacao = linha[1] ? linha[1].trim() : '';
+        if (acao !== '' && variacao !== '') {
+          acaoParaVariacao[acao] = variacao;
+        }
+      }
+    }
+
+    // --- Preencher a tabela com as ações da planilha principal (todas as linhas, incluindo 0 e 1) ---
     let linhasAdicionadas = 0;
 
-    for (let i = 0; i < linhas.length; i++) {
-      const linha = linhas[i];
+    for (let i = 0; i < linhasPrincipal.length; i++) {
+      const linha = linhasPrincipal[i];
       if (linha.length > 300) {
         const acao = linha[300] ? linha[300].trim() : '';
         if (acao !== '') {
           const setor = acaoParaSetor[acao] || '-';
           const pesoRaw = (linha.length > 301 && linha[301]) ? linha[301] : '';
-          const pesoFormatado = formatarPeso(pesoRaw);
+          const pesoFormatado = formatarPercentual(pesoRaw); // reutiliza a função de formatação
           
+          // Busca a variação na segunda planilha
+          const variacaoRaw = acaoParaVariacao[acao] || '';
+          const variacaoFormatada = formatarPercentual(variacaoRaw);
+
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${acao}</td>
             <td>${setor}</td>
             <td>${pesoFormatado}</td>
-            <td>-</td>
+            <td>${variacaoFormatada}</td>
             <td>-</td>
             <td>-</td>
           `;
