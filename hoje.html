@@ -70,6 +70,7 @@ html, body {
   overflow-x:auto;
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
 }
 
 .hoje-table {
@@ -83,6 +84,7 @@ html, body {
   background-color:#164CAD;
   color:white;
   padding:12px 8px;
+  position: relative;
 }
 
 .hoje-table td {
@@ -93,6 +95,41 @@ html, body {
 
 .hoje-table tbody tr:nth-child(even) {
   background-color:#f9f9f9;
+}
+
+/* Botão de refresh redondo */
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.5);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 8px;
+  line-height: 1;
+  user-select: none;
+}
+
+.refresh-btn:hover {
+  background-color: rgba(255,255,255,0.4);
+}
+
+.refresh-btn:active {
+  transform: scale(0.95);
+}
+
+/* Para posicionar o botão na última célula do cabeçalho */
+.hoje-table th:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 </style>
 </head>
@@ -125,7 +162,10 @@ Acompanhamento Diário - Ibovespa
 <th>Peso no<br>Ibov</th>
 <th>Variação %<br>Hoje</th>
 <th>Contribuição<br>para Ibov</th>
-<th>% da<br>contribuição</th>
+<th style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+  % da<br>contribuição
+  <span class="refresh-btn" id="refreshButton" title="Atualizar dados">↻</span>
+</th>
 </tr>
 </thead>
 
@@ -217,7 +257,15 @@ function formatarNumeroBR(num) {
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Função principal de carregamento (agora pode ser chamada novamente)
 async function carregarDados() {
+  const tbody = document.getElementById("tabelaHojeBody");
+  const ibovespaBox = document.getElementById("ibovespaBox");
+  
+  // Mostra indicador de carregamento
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>';
+  ibovespaBox.innerHTML = '<div>Carregando...</div>';
+
   try {
     // Carregar ambas as planilhas em paralelo
     const [respostaPrincipal, respostaVar] = await Promise.all([
@@ -234,7 +282,6 @@ async function carregarDados() {
     const linhasPrincipal = parseCSV(csvPrincipalLimpo);
     const linhasVar = parseCSV(csvVarLimpo);
 
-    const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = "";
 
     if (linhasPrincipal.length < 2) {
@@ -246,7 +293,7 @@ async function carregarDados() {
     let valorIbovespa = NaN;
     let variacaoIbovespa = NaN;
 
-    if (linhasVar.length > 199) { // precisa ter pelo menos até linha 199
+    if (linhasVar.length > 199) {
       const rawValor198 = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
       const rawValor199 = linhasVar[199] && linhasVar[199].length > 1 ? linhasVar[199][1] : null;
       
@@ -254,21 +301,20 @@ async function carregarDados() {
       const valor199 = extrairNumero(rawValor199);
       
       if (!isNaN(valorIbovespa) && !isNaN(valor199) && valor199 !== 0) {
-        variacaoIbovespa = (valorIbovespa / valor199 - 1) * 100; // variação percentual
+        variacaoIbovespa = (valorIbovespa / valor199 - 1) * 100;
       }
     }
 
     // Atualizar quadro
-    const ibovespaBox = document.getElementById("ibovespaBox");
     ibovespaBox.innerHTML = `
       <div>Ibovespa Hoje: <span>${formatarNumeroBR(valorIbovespa)}</span></div>
       <div>Variação: <span>${formatarPercentual(variacaoIbovespa)}</span></div>
     `;
 
-    // --- Mapa ação -> setor a partir das colunas 138..268 (linhas 0 e 1) da planilha principal ---
+    // --- Mapa ação -> setor (colunas 138..268, linhas 0 e 1) ---
     const acaoParaSetor = {};
-    const linhaSetor = linhasPrincipal[0];   // linha 0: setores
-    const linhaCodigo = linhasPrincipal[1];  // linha 1: códigos
+    const linhaSetor = linhasPrincipal[0];
+    const linhaCodigo = linhasPrincipal[1];
 
     for (let col = 138; col <= 268; col++) {
       if (linhaCodigo.length > col && linhaSetor.length > col) {
@@ -280,9 +326,8 @@ async function carregarDados() {
       }
     }
 
-    // --- Mapa ação -> variação a partir da segunda planilha (coluna 0 -> coluna 1) ---
+    // --- Mapa ação -> variação (segunda planilha) ---
     const acaoParaVariacao = {};
-    // Assume que a primeira linha é cabeçalho (linha 0) e a partir da linha 1 são dados
     for (let i = 1; i < linhasVar.length; i++) {
       const linha = linhasVar[i];
       if (linha.length >= 2) {
@@ -294,7 +339,7 @@ async function carregarDados() {
       }
     }
 
-    // --- Preencher a tabela com as ações da planilha principal (todas as linhas, incluindo 0 e 1) ---
+    // --- Preencher a tabela ---
     let linhasAdicionadas = 0;
 
     for (let i = 0; i < linhasPrincipal.length; i++) {
@@ -304,24 +349,20 @@ async function carregarDados() {
         if (acao !== '') {
           const setor = acaoParaSetor[acao] || '-';
           
-          // Peso (coluna 301)
           const pesoRaw = (linha.length > 301 && linha[301]) ? linha[301] : '';
           const pesoNum = extrairNumero(pesoRaw);
           const pesoFormatado = formatarPercentual(pesoNum);
           
-          // Variação (segunda planilha)
           const variacaoRaw = acaoParaVariacao[acao] || '';
           const variacaoNum = extrairNumero(variacaoRaw);
           const variacaoFormatada = formatarPercentual(variacaoNum);
 
-          // Contribuição (quinta coluna) = (peso * variação) / 100
           let contribuicaoNum = NaN;
           if (!isNaN(pesoNum) && !isNaN(variacaoNum)) {
             contribuicaoNum = (pesoNum * variacaoNum) / 100;
           }
           const contribuicaoFormatada = formatarPercentual(contribuicaoNum);
 
-          // % da contribuição (sexta coluna) = (contribuição / variaçãoIbovespa) * 100
           let pctContribuicaoNum = NaN;
           if (!isNaN(contribuicaoNum) && !isNaN(variacaoIbovespa) && variacaoIbovespa !== 0) {
             pctContribuicaoNum = (contribuicaoNum / variacaoIbovespa) * 100;
@@ -349,14 +390,20 @@ async function carregarDados() {
 
   } catch (erro) {
     console.error("Erro ao carregar dados:", erro);
-    const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Erro ao carregar dados. Verifique o console.</td></tr>';
-    const ibovespaBox = document.getElementById("ibovespaBox");
     ibovespaBox.innerHTML = '<div>Erro ao carregar dados</div>';
   }
 }
 
-carregarDados();
+// Adiciona evento de clique ao botão de refresh
+document.addEventListener('DOMContentLoaded', () => {
+  const refreshBtn = document.getElementById('refreshButton');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', carregarDados);
+  }
+  // Carrega os dados pela primeira vez
+  carregarDados();
+});
 </script>
 
 </body>
