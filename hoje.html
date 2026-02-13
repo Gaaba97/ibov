@@ -114,7 +114,6 @@ Acompanhamento Diário - Ibovespa
 <script>
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
 
-// Parser CSV simples que lida com campos entre aspas
 function parseCSV(texto) {
   const linhas = [];
   let linhaAtual = [];
@@ -127,7 +126,6 @@ function parseCSV(texto) {
 
     if (dentroAspas) {
       if (char === '"' && proximo === '"') {
-        // aspas escapadas
         campo += '"';
         i++;
       } else if (char === '"') {
@@ -161,6 +159,15 @@ function parseCSV(texto) {
   return linhas;
 }
 
+function formatarPeso(valor) {
+  if (!valor || valor.trim() === '') return '-';
+  // Substitui vírgula por ponto para conversão numérica
+  const numStr = valor.trim().replace(',', '.');
+  const num = parseFloat(numStr);
+  if (isNaN(num)) return '-';
+  return num.toFixed(2) + '%';
+}
+
 async function carregarDados() {
   try {
     const resposta = await fetch(CSV_URL);
@@ -171,23 +178,17 @@ async function carregarDados() {
     const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = "";
 
-    // Verifica se existem pelo menos duas linhas (cabeçalho e linha de mapeamento)
     if (linhas.length < 2) {
       tbody.innerHTML = '<tr><td colspan="6">Arquivo CSV com poucas linhas</td></tr>';
       return;
     }
 
-    // --- Construir mapa ação -> setor a partir das colunas 138..268 (inclusive) ---
+    // Mapa ação -> setor (colunas 138 a 268 das linhas 0 e 1)
     const acaoParaSetor = {};
+    const linhaSetor = linhas[0];
+    const linhaCodigo = linhas[1];
 
-    // linha 0 (índice 0) contém os setores (cabeçalho)
-    // linha 1 (índice 1) contém os códigos das ações correspondentes
-    const linhaSetor = linhas[0];   // linha 0
-    const linhaCodigo = linhas[1];  // linha 1
-
-    // Índices das colunas (base 0): de 138 a 268
     for (let col = 138; col <= 268; col++) {
-      // Verifica se ambas as linhas têm essa coluna
       if (linhaCodigo.length > col && linhaSetor.length > col) {
         const codigo = linhaCodigo[col] ? linhaCodigo[col].trim() : '';
         const setor = linhaSetor[col] ? linhaSetor[col].trim() : '';
@@ -197,23 +198,22 @@ async function carregarDados() {
       }
     }
 
-    // --- Preencher a tabela com os dados da coluna 300 (ações), coluna 301 (peso) e setores ---
     let linhasAdicionadas = 0;
-
-    // Começa da linha 2 (índice 2) para pular as duas primeiras linhas (mapeamento)
+    // Começa da linha 2 (índice 2) — as duas primeiras são metadados
     for (let i = 2; i < linhas.length; i++) {
       const linha = linhas[i];
-      if (linha.length > 300) { // precisa ter pelo menos a coluna 300
+      if (linha.length > 300) {
         const acao = linha[300] ? linha[300].trim() : '';
         if (acao !== '') {
-          // Pega o peso da coluna 301, se existir
-          const peso = (linha.length > 301 && linha[301]) ? linha[301].trim() : '-';
           const setor = acaoParaSetor[acao] || '-';
+          const pesoRaw = (linha.length > 301 && linha[301]) ? linha[301] : '';
+          const pesoFormatado = formatarPeso(pesoRaw);
+          
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${acao}</td>
             <td>${setor}</td>
-            <td>${peso}</td>
+            <td>${pesoFormatado}</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
