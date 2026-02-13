@@ -34,36 +34,28 @@ html, body {
   width:95%;
   max-width:1400px;
   margin:30px auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* centraliza o conteúdo horizontalmente */
 }
 
 .ibovespa-box {
   border: 1px solid #000;
-  padding: 15px 30px;
+  padding: 15px 20px;
   margin-bottom: 25px;
-  display: inline-block; /* muda para inline-block para centralizar */
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 400px;
   font-family: "Montserrat", sans-serif;
   background-color: #f9f9f9;
   border-radius: 4px;
-  text-align: center; /* centraliza o texto interno */
-  min-width: 250px;
+  text-align: center;
 }
 
 .ibovespa-box div {
   margin: 5px 0;
 }
 
-.ibovespa-box .label {
-  font-weight: 500;
-  color: #333;
-}
-
-.ibovespa-box .value {
+.ibovespa-box span {
   font-weight: 700;
   color: #164CAD;
-  margin-left: 5px;
 }
 
 .table-title {
@@ -72,14 +64,12 @@ html, body {
   font-family:"Montserrat";
   font-size:18px;
   color:#1E4DB7;
-  width: 100%;
 }
 
 .table-wrapper {
   overflow-x:auto;
   border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  width: 100%;
 }
 
 .hoje-table {
@@ -201,6 +191,7 @@ function parseCSV(texto) {
 // Converte string com possível vírgula e % para número
 function extrairNumero(valor) {
   if (!valor || valor.trim() === '') return NaN;
+  // Remove espaços, substitui vírgula por ponto, remove % se houver
   let str = valor.trim().replace(/\s+/g, '');
   str = str.replace(',', '.');
   str = str.replace('%', '');
@@ -220,18 +211,10 @@ function formatarPercentual(valor) {
   return num.toFixed(2) + '%';
 }
 
-// Formata número no padrão brasileiro: XXX.XXX,XX (com pontos de milhar e vírgula decimal)
-function formatarValorMonetario(valor) {
-  if (isNaN(valor) || valor === null || valor === undefined) return '-';
-  // Arredonda para 2 casas decimais
-  let num = Math.round(valor * 100) / 100;
-  // Separa parte inteira e decimal
-  let partes = num.toFixed(2).split('.');
-  let inteiro = partes[0];
-  let decimal = partes[1];
-  // Adiciona pontos de milhar
-  inteiro = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return inteiro + ',' + decimal;
+// Formatar número no estilo brasileiro: 1.234,56
+function formatarNumeroBR(num) {
+  if (isNaN(num)) return '-';
+  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 async function carregarDados() {
@@ -259,36 +242,27 @@ async function carregarDados() {
       return;
     }
 
-    // --- Valores para o quadro Ibovespa (linhas 198 e 199, coluna 1) ---
-    let ibovespaHoje = NaN;
-    let ibovespaAnterior = NaN;
+    // --- Extrair valor do Ibovespa (linha 198, coluna 1) e calcular variação ---
+    let valorIbovespa = NaN;
+    let variacaoIbovespa = NaN;
 
-    if (linhasVar.length > 198) {
-      // Linha 198, coluna 1 (índice 1)
-      const valor198 = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
-      ibovespaHoje = extrairNumero(valor198);
+    if (linhasVar.length > 199) { // precisa ter pelo menos até linha 199
+      const rawValor198 = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
+      const rawValor199 = linhasVar[199] && linhasVar[199].length > 1 ? linhasVar[199][1] : null;
+      
+      valorIbovespa = extrairNumero(rawValor198);
+      const valor199 = extrairNumero(rawValor199);
+      
+      if (!isNaN(valorIbovespa) && !isNaN(valor199) && valor199 !== 0) {
+        variacaoIbovespa = (valorIbovespa / valor199 - 1) * 100; // variação percentual
+      }
     }
-    if (linhasVar.length > 199) {
-      // Linha 199, coluna 1 (índice 1)
-      const valor199 = linhasVar[199] && linhasVar[199].length > 1 ? linhasVar[199][1] : null;
-      ibovespaAnterior = extrairNumero(valor199);
-    }
 
-    // Formata o valor do Ibovespa hoje
-    const ibovespaHojeFormatado = formatarValorMonetario(ibovespaHoje);
-
-    // Calcula variação percentual
-    let variacaoIbovespa = '-';
-    if (!isNaN(ibovespaHoje) && !isNaN(ibovespaAnterior) && ibovespaAnterior !== 0) {
-      variacaoIbovespa = ((ibovespaHoje / ibovespaAnterior) - 1) * 100;
-    }
-    const variacaoFormatada = formatarPercentual(variacaoIbovespa);
-
-    // Preenche o quadro
+    // Atualizar quadro
     const ibovespaBox = document.getElementById("ibovespaBox");
     ibovespaBox.innerHTML = `
-      <div><span class="label">Ibovespa Hoje:</span> <span class="value">${ibovespaHojeFormatado}</span></div>
-      <div><span class="label">Variação:</span> <span class="value">${variacaoFormatada}</span></div>
+      <div>Ibovespa Hoje: <span>${formatarNumeroBR(valorIbovespa)}</span></div>
+      <div>Variação: <span>${formatarPercentual(variacaoIbovespa)}</span></div>
     `;
 
     // --- Mapa ação -> setor a partir das colunas 138..268 (linhas 0 e 1) da planilha principal ---
@@ -340,12 +314,19 @@ async function carregarDados() {
           const variacaoNum = extrairNumero(variacaoRaw);
           const variacaoFormatada = formatarPercentual(variacaoNum);
 
-          // Contribuição = (peso * variação) / 100
+          // Contribuição (quinta coluna) = (peso * variação) / 100
           let contribuicaoNum = NaN;
           if (!isNaN(pesoNum) && !isNaN(variacaoNum)) {
             contribuicaoNum = (pesoNum * variacaoNum) / 100;
           }
           const contribuicaoFormatada = formatarPercentual(contribuicaoNum);
+
+          // % da contribuição (sexta coluna) = (contribuição / variaçãoIbovespa) * 100
+          let pctContribuicaoNum = NaN;
+          if (!isNaN(contribuicaoNum) && !isNaN(variacaoIbovespa) && variacaoIbovespa !== 0) {
+            pctContribuicaoNum = (contribuicaoNum / variacaoIbovespa) * 100;
+          }
+          const pctContribuicaoFormatada = formatarPercentual(pctContribuicaoNum);
 
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -354,7 +335,7 @@ async function carregarDados() {
             <td>${pesoFormatado}</td>
             <td>${variacaoFormatada}</td>
             <td>${contribuicaoFormatada}</td>
-            <td>-</td>
+            <td>${pctContribuicaoFormatada}</td>
           `;
           tbody.appendChild(tr);
           linhasAdicionadas++;
