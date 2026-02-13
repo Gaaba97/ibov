@@ -1,1 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoje</title>
+  <!-- Mesmas fontes usadas na navbar original -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* Reset básico para que a navbar fique colada no topo */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #fff;
+      font-family: "DM Sans", sans-serif;
+      height: 100%;
+    }
 
+    /* ----- NAVBAR PRETA (links à direita) exatamente igual à original ----- */
+    .navbar {
+      background-color: #000;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 30px;
+      font-family: "Montserrat", sans-serif;
+      font-size: 16px;
+    }
+    .navbar a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
+    }
+    .navbar a:hover {
+      opacity: 0.8;
+    }
+    /* ----- FIM DA NAVBAR ----- */
+  </style>
+</head>
+<body>
+  <!-- Navbar idêntica à original, com links para Histórico (index.html) e Hoje (hoje.html) -->
+  <nav class="navbar">
+    <a href="index.html">Histórico</a>
+    <a href="hoje.html">Hoje</a>
+  </nav>
+
+  <!--
+    =========================================================================
+    A partir daqui você pode adicionar o conteúdo específico da página "Hoje".
+    O navbar permanece exatamente como o original, sem nenhum outro elemento.
+    =========================================================================
+  -->
+</body>
+</html>
