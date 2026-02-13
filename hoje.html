@@ -171,7 +171,7 @@ async function carregarDados() {
     const tbody = document.getElementById("tabelaHojeBody");
     tbody.innerHTML = "";
 
-    // Verifica se existem pelo menos duas linhas para o mapeamento
+    // Verifica se existem pelo menos duas linhas (cabeçalho e linha de mapeamento)
     if (linhas.length < 2) {
       tbody.innerHTML = '<tr><td colspan="6">Arquivo CSV com poucas linhas</td></tr>';
       return;
@@ -197,23 +197,23 @@ async function carregarDados() {
       }
     }
 
-    // --- Preencher a tabela com os dados da coluna 300 (ações) de TODAS as linhas ---
+    // --- Preencher a tabela com os dados da coluna 300 (ações), coluna 301 (peso) e setores ---
     let linhasAdicionadas = 0;
 
-    // Agora percorremos todas as linhas do CSV (índice 0 até o fim)
-    for (let i = 0; i < linhas.length; i++) {
+    // Começa da linha 2 (índice 2) para pular as duas primeiras linhas (mapeamento)
+    for (let i = 2; i < linhas.length; i++) {
       const linha = linhas[i];
-      // Verifica se a linha tem pelo menos 301 colunas (índice 300 existe)
-      if (linha.length > 300) {
+      if (linha.length > 300) { // precisa ter pelo menos a coluna 300
         const acao = linha[300] ? linha[300].trim() : '';
         if (acao !== '') {
-          // Busca o setor no mapa
+          // Pega o peso da coluna 301, se existir
+          const peso = (linha.length > 301 && linha[301]) ? linha[301].trim() : '-';
           const setor = acaoParaSetor[acao] || '-';
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${acao}</td>
             <td>${setor}</td>
-            <td>-</td>
+            <td>${peso}</td>
             <td>-</td>
             <td>-</td>
             <td>-</td>
@@ -226,8 +226,6 @@ async function carregarDados() {
 
     if (linhasAdicionadas === 0) {
       tbody.innerHTML = '<tr><td colspan="6">Nenhuma ação encontrada na coluna 300</td></tr>';
-    } else {
-      console.log(`Total de ações encontradas: ${linhasAdicionadas}`);
     }
 
   } catch (erro) {
