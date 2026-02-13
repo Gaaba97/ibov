@@ -177,7 +177,7 @@ async function carregarDados() {
       return;
     }
 
-    // --- Construir mapa ação -> setor a partir das colunas 139..268 (inclusive) ---
+    // --- Construir mapa ação -> setor a partir das colunas 138..268 (inclusive) ---
     const acaoParaSetor = {};
 
     // linha 0 (índice 0) contém os setores (cabeçalho)
@@ -185,8 +185,8 @@ async function carregarDados() {
     const linhaSetor = linhas[0];   // linha 0
     const linhaCodigo = linhas[1];  // linha 1
 
-    // Índices das colunas (base 0): 139 a 268
-    for (let col = 139; col <= 268; col++) {
+    // Índices das colunas (base 0): de 138 a 268
+    for (let col = 138; col <= 268; col++) {
       // Verifica se ambas as linhas têm essa coluna
       if (linhaCodigo.length > col && linhaSetor.length > col) {
         const codigo = linhaCodigo[col] ? linhaCodigo[col].trim() : '';
