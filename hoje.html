@@ -58,25 +58,46 @@ html, body {
   color: #164CAD;
 }
 
-.table-title {
-  text-align:center;
-  margin-bottom:20px;
-  font-family:"Montserrat";
-  font-size:18px;
-  color:#1E4DB7;
-}
-
-/* Container do cabeçalho da tabela com título e botão */
+/* Cabeçalho da seção da tabela com título e botão */
 .header-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 15px;
+  flex-wrap: wrap; /* para telas pequenas */
+  gap: 10px;
 }
 
 .header-container .table-title {
-  margin-bottom: 0; /* remove margem inferior para alinhar com o botão */
+  font-family: "Montserrat", sans-serif;
+  font-size: 18px;
+  color: #1E4DB7;
+  margin: 0; /* remove margens padrão */
   flex: 1; /* ocupa o espaço disponível */
+}
+
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #164CAD;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.refresh-btn:hover {
+  background-color: #0d3a8c;
+}
+
+.refresh-btn:active {
+  transform: scale(0.95);
 }
 
 .refresh-img {
@@ -84,7 +105,6 @@ html, body {
   height: auto;
   cursor: pointer;
   transition: opacity 0.2s;
-  margin-left: 10px;
 }
 
 .refresh-img:hover {
@@ -145,7 +165,10 @@ html, body {
 <!-- Cabeçalho com título e botão de refresh -->
 <div class="header-container">
   <div class="table-title">Acompanhamento Diário - Ibovespa</div>
-  <img src="refresh.png" alt="Atualizar dados" class="refresh-img" id="refreshButton" title="Atualizar dados">
+  <!-- Botão que usa imagem com fallback para texto -->
+  <div id="refreshButton" class="refresh-btn" title="Atualizar dados" role="button" tabindex="0">
+    <img src="refresh.png" alt="↻" class="refresh-img" id="refreshImg" onerror="this.style.display='none'; this.parentElement.innerHTML='↻';">
+  </div>
 </div>
 
 <div class="table-wrapper">
@@ -388,7 +411,7 @@ async function carregarDados() {
   }
 }
 
-// Adiciona evento de clique ao botão de refresh
+// Adiciona evento de clique ao botão de refresh (tanto na imagem quanto no fallback)
 document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshButton');
   if (refreshBtn) {
