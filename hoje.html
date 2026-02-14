@@ -66,6 +66,35 @@ html, body {
   color:#1E4DB7;
 }
 
+/* Container do cabeçalho da tabela com título e botão */
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.header-container .table-title {
+  margin-bottom: 0; /* remove margem inferior para alinhar com o botão */
+  flex: 1; /* ocupa o espaço disponível */
+}
+
+.refresh-img {
+  width: 28px;
+  height: auto;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-left: 10px;
+}
+
+.refresh-img:hover {
+  opacity: 0.7;
+}
+
+.refresh-img:active {
+  transform: scale(0.95);
+}
+
 .table-wrapper {
   overflow-x:auto;
   border-radius:8px;
@@ -84,7 +113,7 @@ html, body {
   background-color:#164CAD;
   color:white;
   padding:12px 8px;
-  position: relative;
+  text-align:center;
 }
 
 .hoje-table td {
@@ -95,41 +124,6 @@ html, body {
 
 .hoje-table tbody tr:nth-child(even) {
   background-color:#f9f9f9;
-}
-
-/* Botão de refresh redondo */
-.refresh-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.5);
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-left: 8px;
-  line-height: 1;
-  user-select: none;
-}
-
-.refresh-btn:hover {
-  background-color: rgba(255,255,255,0.4);
-}
-
-.refresh-btn:active {
-  transform: scale(0.95);
-}
-
-/* Para posicionar o botão na última célula do cabeçalho */
-.hoje-table th:last-child {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
 }
 </style>
 </head>
@@ -148,8 +142,10 @@ html, body {
   <div>Carregando...</div>
 </div>
 
-<div class="table-title">
-Acompanhamento Diário - Ibovespa
+<!-- Cabeçalho com título e botão de refresh -->
+<div class="header-container">
+  <div class="table-title">Acompanhamento Diário - Ibovespa</div>
+  <img src="refresh.png" alt="Atualizar dados" class="refresh-img" id="refreshButton" title="Atualizar dados">
 </div>
 
 <div class="table-wrapper">
@@ -162,10 +158,7 @@ Acompanhamento Diário - Ibovespa
 <th>Peso no<br>Ibov</th>
 <th>Variação %<br>Hoje</th>
 <th>Contribuição<br>para Ibov</th>
-<th style="display: flex; align-items: center; justify-content: center; gap: 5px;">
-  % da<br>contribuição
-  <span class="refresh-btn" id="refreshButton" title="Atualizar dados">↻</span>
-</th>
+<th>% da<br>contribuição</th>
 </tr>
 </thead>
 
