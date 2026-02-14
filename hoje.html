@@ -73,6 +73,7 @@ html, body {
   color: #1E4DB7;
   margin: 0;
   flex: 1;
+  text-align: center; /* centraliza o texto */
 }
 
 .refresh-btn {
@@ -558,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshButton');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
-      // Mantém a ordenação atual? Vamos manter (já que os dados são recarregados, a ordenação será reaplicada)
+      // Mantém a ordenação atual (será reaplicada após carregar)
       carregarDados();
     });
   }
