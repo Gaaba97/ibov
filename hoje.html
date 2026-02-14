@@ -58,13 +58,12 @@ html, body {
   color: #164CAD;
 }
 
-/* Cabeçalho da seção da tabela com título e botão */
 .header-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 15px;
-  flex-wrap: wrap; /* para telas pequenas */
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -72,8 +71,8 @@ html, body {
   font-family: "Montserrat", sans-serif;
   font-size: 18px;
   color: #1E4DB7;
-  margin: 0; /* remove margens padrão */
-  flex: 1; /* ocupa o espaço disponível */
+  margin: 0;
+  flex: 1;
 }
 
 .refresh-btn {
@@ -134,6 +133,18 @@ html, body {
   color:white;
   padding:12px 8px;
   text-align:center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hoje-table th.sortable:hover {
+  background-color: #1e5bbf;
+}
+
+.hoje-table th .sort-icon {
+  margin-left: 5px;
+  font-size: 14px;
 }
 
 .hoje-table td {
@@ -165,7 +176,6 @@ html, body {
 <!-- Cabeçalho com título e botão de refresh -->
 <div class="header-container">
   <div class="table-title">Acompanhamento Diário - Ibovespa</div>
-  <!-- Botão que usa imagem com fallback para texto -->
   <div id="refreshButton" class="refresh-btn" title="Atualizar dados" role="button" tabindex="0">
     <img src="refresh.png" alt="↻" class="refresh-img" id="refreshImg" onerror="this.style.display='none'; this.parentElement.innerHTML='↻';">
   </div>
@@ -173,14 +183,14 @@ html, body {
 
 <div class="table-wrapper">
 
-<table class="hoje-table">
+<table class="hoje-table" id="tabelaHoje">
 <thead>
 <tr>
 <th>Ação</th>
 <th>Setor</th>
-<th>Peso no<br>Ibov</th>
-<th>Variação %<br>Hoje</th>
-<th>Contribuição<br>para Ibov</th>
+<th id="col-peso" class="sortable">Peso no<br>Ibov <span class="sort-icon" id="sort-icon-peso"></span></th>
+<th id="col-variacao" class="sortable">Variação %<br>Hoje <span class="sort-icon" id="sort-icon-variacao"></span></th>
+<th id="col-contribuicao" class="sortable">Contribuição<br>para Ibov <span class="sort-icon" id="sort-icon-contribuicao"></span></th>
 <th>% da<br>contribuição</th>
 </tr>
 </thead>
@@ -188,7 +198,6 @@ html, body {
 <tbody id="tabelaHojeBody">
 <!-- preenchido via JS -->
 </tbody>
-
 </table>
 
 </div>
@@ -197,6 +206,26 @@ html, body {
 <script>
 const CSV_URL_PRINCIPAL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
 const CSV_URL_VAR = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwmjzKT5EHJS3McU2_42R-MI6uR4cdm04GeeQ9RBxhprOwSkl9xIx01rZvweCtl3quo2rBNNtNE2AB/pub?output=csv";
+
+// Estado global
+let dadosAcoes = []; // array de objetos com os dados das ações
+let variacaoIbovespaGlobal = NaN; // para usar no cálculo da % contribuição
+let ordenacao = {
+  coluna: null, // 'peso', 'variacao', 'contribuicao'
+  direcao: 'asc' // 'asc' ou 'desc'
+};
+
+// Mapeamento de IDs das colunas para a chave no objeto
+const colunaParaChave = {
+  'col-peso': 'pesoNum',
+  'col-variacao': 'variacaoNum',
+  'col-contribuicao': 'contribuicaoNum'
+};
+
+// Elementos dos ícones de ordenação
+const iconPeso = document.getElementById('sort-icon-peso');
+const iconVariacao = document.getElementById('sort-icon-variacao');
+const iconContribuicao = document.getElementById('sort-icon-contribuicao');
 
 // Parser CSV simples que lida com campos entre aspas
 function parseCSV(texto) {
@@ -273,6 +302,75 @@ function formatarNumeroBR(num) {
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Atualiza os ícones de ordenação no cabeçalho
+function atualizarIconesOrdenacao() {
+  // Limpa todos os ícones
+  iconPeso.innerHTML = '';
+  iconVariacao.innerHTML = '';
+  iconContribuicao.innerHTML = '';
+
+  if (ordenacao.coluna) {
+    const seta = ordenacao.direcao === 'asc' ? '▲' : '▼';
+    if (ordenacao.coluna === 'peso') {
+      iconPeso.innerHTML = seta;
+    } else if (ordenacao.coluna === 'variacao') {
+      iconVariacao.innerHTML = seta;
+    } else if (ordenacao.coluna === 'contribuicao') {
+      iconContribuicao.innerHTML = seta;
+    }
+  }
+}
+
+// Função de ordenação
+function ordenarDados() {
+  if (!ordenacao.coluna) return; // mantém ordem original (como veio)
+
+  const chave = ordenacao.coluna === 'peso' ? 'pesoNum' :
+                ordenacao.coluna === 'variacao' ? 'variacaoNum' : 'contribuicaoNum';
+
+  dadosAcoes.sort((a, b) => {
+    let valA = a[chave];
+    let valB = b[chave];
+
+    // Tratar NaN: colocar no final
+    if (isNaN(valA) && isNaN(valB)) return 0;
+    if (isNaN(valA)) return 1;  // a depois
+    if (isNaN(valB)) return -1; // b depois
+
+    if (ordenacao.direcao === 'asc') {
+      return valA - valB;
+    } else {
+      return valB - valA;
+    }
+  });
+}
+
+// Renderiza a tabela com os dados ordenados
+function renderizarTabela() {
+  const tbody = document.getElementById("tabelaHojeBody");
+  tbody.innerHTML = '';
+
+  if (dadosAcoes.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6">Nenhum dado disponível</td></tr>';
+    return;
+  }
+
+  for (const item of dadosAcoes) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.acao}</td>
+      <td>${item.setor}</td>
+      <td>${item.pesoFormatado}</td>
+      <td>${item.variacaoFormatada}</td>
+      <td>${item.contribuicaoFormatada}</td>
+      <td>${item.pctContribuicaoFormatada}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  atualizarIconesOrdenacao();
+}
+
 // Função principal de carregamento (agora pode ser chamada novamente)
 async function carregarDados() {
   const tbody = document.getElementById("tabelaHojeBody");
@@ -298,8 +396,6 @@ async function carregarDados() {
     const linhasPrincipal = parseCSV(csvPrincipalLimpo);
     const linhasVar = parseCSV(csvVarLimpo);
 
-    tbody.innerHTML = "";
-
     if (linhasPrincipal.length < 2) {
       tbody.innerHTML = '<tr><td colspan="6">Arquivo principal com poucas linhas</td></tr>';
       return;
@@ -307,7 +403,7 @@ async function carregarDados() {
 
     // --- Extrair valor do Ibovespa (linha 198, coluna 1) e calcular variação ---
     let valorIbovespa = NaN;
-    let variacaoIbovespa = NaN;
+    variacaoIbovespaGlobal = NaN;
 
     if (linhasVar.length > 199) {
       const rawValor198 = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
@@ -317,14 +413,14 @@ async function carregarDados() {
       const valor199 = extrairNumero(rawValor199);
       
       if (!isNaN(valorIbovespa) && !isNaN(valor199) && valor199 !== 0) {
-        variacaoIbovespa = (valorIbovespa / valor199 - 1) * 100;
+        variacaoIbovespaGlobal = (valorIbovespa / valor199 - 1) * 100;
       }
     }
 
     // Atualizar quadro
     ibovespaBox.innerHTML = `
       <div>Ibovespa Hoje: <span>${formatarNumeroBR(valorIbovespa)}</span></div>
-      <div>Variação: <span>${formatarPercentual(variacaoIbovespa)}</span></div>
+      <div>Variação: <span>${formatarPercentual(variacaoIbovespaGlobal)}</span></div>
     `;
 
     // --- Mapa ação -> setor (colunas 138..268, linhas 0 e 1) ---
@@ -355,8 +451,8 @@ async function carregarDados() {
       }
     }
 
-    // --- Preencher a tabela ---
-    let linhasAdicionadas = 0;
+    // --- Construir array de objetos dadosAcoes ---
+    dadosAcoes = []; // reset
 
     for (let i = 0; i < linhasPrincipal.length; i++) {
       const linha = linhasPrincipal[i];
@@ -380,27 +476,36 @@ async function carregarDados() {
           const contribuicaoFormatada = formatarPercentual(contribuicaoNum);
 
           let pctContribuicaoNum = NaN;
-          if (!isNaN(contribuicaoNum) && !isNaN(variacaoIbovespa) && variacaoIbovespa !== 0) {
-            pctContribuicaoNum = (contribuicaoNum / variacaoIbovespa) * 100;
+          if (!isNaN(contribuicaoNum) && !isNaN(variacaoIbovespaGlobal) && variacaoIbovespaGlobal !== 0) {
+            pctContribuicaoNum = (contribuicaoNum / variacaoIbovespaGlobal) * 100;
           }
           const pctContribuicaoFormatada = formatarPercentual(pctContribuicaoNum);
 
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${acao}</td>
-            <td>${setor}</td>
-            <td>${pesoFormatado}</td>
-            <td>${variacaoFormatada}</td>
-            <td>${contribuicaoFormatada}</td>
-            <td>${pctContribuicaoFormatada}</td>
-          `;
-          tbody.appendChild(tr);
-          linhasAdicionadas++;
+          dadosAcoes.push({
+            acao,
+            setor,
+            pesoNum,
+            pesoFormatado,
+            variacaoNum,
+            variacaoFormatada,
+            contribuicaoNum,
+            contribuicaoFormatada,
+            pctContribuicaoNum,
+            pctContribuicaoFormatada
+          });
         }
       }
     }
 
-    if (linhasAdicionadas === 0) {
+    // Aplicar ordenação ativa (se houver) nos novos dados
+    if (ordenacao.coluna) {
+      ordenarDados();
+    }
+
+    // Renderizar
+    renderizarTabela();
+
+    if (dadosAcoes.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6">Nenhuma ação encontrada na coluna 300</td></tr>';
     }
 
@@ -411,12 +516,54 @@ async function carregarDados() {
   }
 }
 
-// Adiciona evento de clique ao botão de refresh (tanto na imagem quanto no fallback)
+// Manipulador de clique nos cabeçalhos ordenáveis
+function configurarOrdenacao() {
+  document.getElementById('col-peso').addEventListener('click', () => {
+    if (ordenacao.coluna === 'peso') {
+      // inverte direção
+      ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+      ordenacao.coluna = 'peso';
+      ordenacao.direcao = 'asc';
+    }
+    ordenarDados();
+    renderizarTabela();
+  });
+
+  document.getElementById('col-variacao').addEventListener('click', () => {
+    if (ordenacao.coluna === 'variacao') {
+      ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+      ordenacao.coluna = 'variacao';
+      ordenacao.direcao = 'asc';
+    }
+    ordenarDados();
+    renderizarTabela();
+  });
+
+  document.getElementById('col-contribuicao').addEventListener('click', () => {
+    if (ordenacao.coluna === 'contribuicao') {
+      ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+      ordenacao.coluna = 'contribuicao';
+      ordenacao.direcao = 'asc';
+    }
+    ordenarDados();
+    renderizarTabela();
+  });
+}
+
+// Adiciona evento de clique ao botão de refresh
 document.addEventListener('DOMContentLoaded', () => {
   const refreshBtn = document.getElementById('refreshButton');
   if (refreshBtn) {
-    refreshBtn.addEventListener('click', carregarDados);
+    refreshBtn.addEventListener('click', () => {
+      // Mantém a ordenação atual? Vamos manter (já que os dados são recarregados, a ordenação será reaplicada)
+      carregarDados();
+    });
   }
+  // Configurar ordenação
+  configurarOrdenacao();
   // Carrega os dados pela primeira vez
   carregarDados();
 });
