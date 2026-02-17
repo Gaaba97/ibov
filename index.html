@@ -11,7 +11,7 @@
       padding: 12px 20px;
       display: flex;
       align-items: center;
-      justify-content: flex-end; /* ALTERADO PARA DIREITA */
+      justify-content: flex-end;
       gap: 30px;
       font-family: "Montserrat", sans-serif;
       font-size: 16px;
@@ -514,8 +514,30 @@
     </div>
   </div>
 
+  <!-- Firebase SDK (módulo) – colocado antes do script principal -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAMfMIXZP4FE2K0Ux3-mZfyRSsXs-ffqxw",
+      authDomain: "ibovespa-ae47d.firebaseapp.com",
+      projectId: "ibovespa-ae47d",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Opcional: você pode exportar auth para uso em outros módulos,
+    // ou simplesmente deixar o Firebase inicializado.
+    console.log("Firebase inicializado com projeto:", firebaseConfig.projectId);
+  </script>
+
+  <!-- Bibliotecas auxiliares -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <!-- Script principal da aplicação (lógica do gráfico e tabelas) -->
   <script>
     const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
     
@@ -528,7 +550,7 @@
     
     // Pesos individuais das ações (PROCV col300 -> col301)
     let stockWeightsMap = {};
-    // Pesos individuais dos setores (PROCV col304 -> col305) ← CORRIGIDO!
+    // Pesos individuais dos setores (PROCV col304 -> col305)
     let sectorWeightsMap = {};
 
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
@@ -726,15 +748,15 @@
           }
         }
 
-        // --- PESOS INDIVIDUAIS DOS SETORES (coluna 304 -> coluna 305) --- CORRIGIDO!
+        // --- PESOS INDIVIDUAIS DOS SETORES (coluna 304 -> coluna 305) ---
         sectorWeightsMap = {};
         for (let i = 0; i < linhas.length; i++) {
           const row = linhas[i];
-          if (row.length > 306) { // ainda precisamos garantir que o array tenha pelo menos 306 elementos (índice 305)
-            const sectorNameRaw = row[304] ? row[304].replace(/"/g, '').trim() : ''; // coluna 305 → índice 304
+          if (row.length > 306) {
+            const sectorNameRaw = row[304] ? row[304].replace(/"/g, '').trim() : '';
             if (sectorNameRaw !== '') {
               const sectorName = cleanName(sectorNameRaw);
-              const weightStr = row[305] ? row[305].replace(/"/g, '').trim() : ''; // coluna 306 → índice 305
+              const weightStr = row[305] ? row[305].replace(/"/g, '').trim() : '';
               if (weightStr !== '') {
                 const weight = parseWeightValue(weightStr);
                 if (!isNaN(weight)) sectorWeightsMap[sectorName] = weight;
@@ -1378,7 +1400,7 @@
       tableBody.innerHTML = '';
       
       top7Acoes.forEach(acao => {
-        const normalizedName = acao.nome; // já limpo
+        const normalizedName = acao.nome;
         let pesoAtual = '-';
         if (stockWeightsMap[normalizedName] !== undefined) {
           pesoAtual = stockWeightsMap[normalizedName].toFixed(2) + '%';
@@ -1421,13 +1443,11 @@
       document.getElementById('tableTitle2').style.display = 'block';
     }
     
-    // ***** TABELA 3 REFATORADA – SETORES (col 273–300) e pesos (col 304–305) *****
     function updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
       const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
       
       const contribuicoesSetores = [];
       
-      // Itera sobre os 28 setores (colunas 273 a 300)
       for (let setorIndex = 0; setorIndex < 28; setorIndex++) {
         let somaSetor = 0;
         
@@ -1452,17 +1472,14 @@
         });
       }
       
-      // Ordena por contribuição em pontos (maior para menor)
       contribuicoesSetores.sort((a, b) => b.somaPontos - a.somaPontos);
-      
-      // Pega os 7 maiores setores
       const top7Setores = contribuicoesSetores.slice(0, 7);
       
       const tableBody = document.getElementById('contributionsTableBody3');
       tableBody.innerHTML = '';
       
       top7Setores.forEach(setor => {
-        const normalizedName = setor.nome; // já limpo
+        const normalizedName = setor.nome;
         let pesoAtual = '-';
         if (sectorWeightsMap[normalizedName] !== undefined) {
           pesoAtual = sectorWeightsMap[normalizedName].toFixed(2) + '%';
@@ -1646,54 +1663,6 @@
     }
     
     document.addEventListener('DOMContentLoaded', init);
-
-
-fetch("https://api-mkyiwsao3a-uc.a.run.app/segredo")
-  .then(r => r.json())
-  .then(data => {
-    console.log("RESPOSTA:", data);
-  });
-
-
-
   </script>
-
-  <script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_AUTH_DOMAIN",
-  projectId: "ibovespa-ae47d"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-onAuthStateChanged(auth, async (user) => {
-
-  if (!user) {
-    console.log("não logado");
-    return;
-  }
-
-  const token = await user.getIdToken();
-
-  const response = await fetch("https://api-mkyiwsao3a-uc.a.run.app/segredo", {
-    headers: {
-      Authorization: "Bearer " + token
-    }
-  });
-
-  const data = await response.json();
-
-  console.log(data);
-
-});
-
-</script>
-
 </body>
 </html>
