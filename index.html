@@ -1657,5 +1657,43 @@ fetch("https://api-mkyiwsao3a-uc.a.run.app/segredo")
 
 
   </script>
+
+  <script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_AUTH_DOMAIN",
+  projectId: "ibovespa-ae47d"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    console.log("não logado");
+    return;
+  }
+
+  const token = await user.getIdToken();
+
+  const response = await fetch("https://api-mkyiwsao3a-uc.a.run.app/segredo", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  const data = await response.json();
+
+  console.log(data);
+
+});
+
+</script>
+
 </body>
 </html>
