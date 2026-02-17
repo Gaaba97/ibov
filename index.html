@@ -427,14 +427,14 @@
   <div class="container">
     <div class="header-info">
       <h1>Ibovespa - Atribuição de Performance</h1>
-      <div class="subtitle" id="subtitle">Carregando dados da planilha...</div>
+      <div class="subtitle" id="subtitle">Carregando dados...</div>
     </div>
     
     <div class="chart-main-container">
       <div class="chart-container">
         <canvas id="ibovespaChart"></canvas>
       </div>
-      <div class="period-controls" id="periodControls" style="display: none;">
+      <div class="period-controls" id="periodControls">
         <button class="period-btn active" data-period="1m">1 Mês</button>
         <button class="period-btn" data-period="3m">3 Meses</button>
         <button class="period-btn" data-period="6m">6 Meses</button>
@@ -514,7 +514,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDK (módulo) – colocado antes do script principal -->
+  <!-- Firebase SDK (opcional) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -527,9 +527,6 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-
-    // Opcional: você pode exportar auth para uso em outros módulos,
-    // ou simplesmente deixar o Firebase inicializado.
     console.log("Firebase inicializado com projeto:", firebaseConfig.projectId);
   </script>
 
@@ -537,28 +534,31 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
-  <!-- Script principal da aplicação (lógica do gráfico e tabelas) -->
+  <!-- Script principal da aplicação (agora leve) -->
   <script>
-    const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
-    
-    let ibovespaChart = null;
-    let allIbovespaData = [];
-    let filteredData = [];
-    let weightsMap = null;
-    let acoesNames = [];            // Nomes das ações (col 138–267)
-    let sectorNames = [];          // Nomes dos setores (col 273–300)
-    
-    // Pesos individuais das ações (PROCV col300 -> col301)
-    let stockWeightsMap = {};
-    // Pesos individuais dos setores (PROCV col304 -> col305)
-    let sectorWeightsMap = {};
-
+    // Configuração
+    const API_URL = "https://us-central1-ibovespa-ae47d.cloudfunctions.net/api/dados";
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
+
+    let ibovespaChart = null;
+    let chartDataCache = []; // usado para o tooltip
+
+    // Elementos do DOM
+    const subtitleEl = document.getElementById('subtitle');
+    const loadingEl = document.getElementById('loadingIndicator');
+    const periodControls = document.getElementById('periodControls');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const startDateError = document.getElementById('startDateError');
+    const endDateError = document.getElementById('endDateError');
+    const applyBtn = document.getElementById('applyCustomRange');
+    const periodBtns = document.querySelectorAll('.period-btn');
+
+    // Tooltip customizado
     let customTooltip = null;
 
     function createCustomTooltip() {
       if (customTooltip) return customTooltip;
-      
       customTooltip = document.createElement('div');
       customTooltip.className = 'custom-tooltip';
       document.querySelector('.chart-main-container').appendChild(customTooltip);
@@ -567,7 +567,6 @@
 
     function showCustomTooltip(chart, tooltip) {
       const tooltipEl = createCustomTooltip();
-      
       if (tooltip.opacity === 0) {
         tooltipEl.classList.remove('visible');
         return;
@@ -575,36 +574,32 @@
 
       if (tooltip.body) {
         const title = tooltip.title[0] || '';
-        let tooltipHTML = `<div class="tooltip-header">${title}</div>`;
-        
-        tooltip.dataPoints.forEach((dataPoint) => {
-          const dataset = chart.data.datasets[dataPoint.datasetIndex];
-          const pointIndex = dataPoint.dataIndex;
-          const originalValue = filteredData[pointIndex]?.value || 0;
-          const percentValue = dataPoint.raw.y;
-          const color = dataset.borderColor || '#164CAD';
-          
-          tooltipHTML += `
-            <div class="tooltip-item">
-              <span class="tooltip-label">
-                <span class="tooltip-color" style="background-color: ${color}"></span>
-                ${dataset.label || 'Ibovespa'}
-              </span>
-            </div>
-            <div class="tooltip-item">
-              <span class="tooltip-label">Variação:</span>
-              <span class="tooltip-value" style="color: ${percentValue >= 0 ? '#008000' : '#ff0000'}">
-                ${percentValue >= 0 ? '+' : ''}${percentValue.toFixed(2)}%
-              </span>
-            </div>
-            <div class="tooltip-item">
-              <span class="tooltip-label">Valor:</span>
-              <span class="tooltip-value">${originalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pontos</span>
-            </div>
-          `;
-        });
-        
-        tooltipEl.innerHTML = tooltipHTML;
+        const dataPoint = tooltip.dataPoints[0];
+        const dataset = chart.data.datasets[dataPoint.datasetIndex];
+        const pointIndex = dataPoint.dataIndex;
+        const originalValue = chartDataCache[pointIndex]?.value || 0;
+        const percentValue = dataPoint.raw.y;
+        const color = dataset.borderColor || '#164CAD';
+
+        tooltipEl.innerHTML = `
+          <div class="tooltip-header">${title}</div>
+          <div class="tooltip-item">
+            <span class="tooltip-label">
+              <span class="tooltip-color" style="background-color: ${color}"></span>
+              ${dataset.label || 'Ibovespa'}
+            </span>
+          </div>
+          <div class="tooltip-item">
+            <span class="tooltip-label">Variação:</span>
+            <span class="tooltip-value" style="color: ${percentValue >= 0 ? '#008000' : '#ff0000'}">
+              ${percentValue >= 0 ? '+' : ''}${percentValue.toFixed(2)}%
+            </span>
+          </div>
+          <div class="tooltip-item">
+            <span class="tooltip-label">Valor:</span>
+            <span class="tooltip-value">${originalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pontos</span>
+          </div>
+        `;
       }
 
       const position = chart.canvas.getBoundingClientRect();
@@ -633,1035 +628,311 @@
       
       tooltipEl.style.left = left + 'px';
       tooltipEl.style.top = top + 'px';
-      
       tooltipEl.className = 'custom-tooltip top visible';
     }
 
-    async function loadIbovespaData() {
+    // Função principal: carrega dados da API
+    async function carregarDados(params = { periodo: '1m' }) {
       try {
-        document.getElementById('subtitle').textContent = 'Carregando dados da planilha...';
-        
-        const response = await fetch(SPREADSHEET_URL);
-        
-        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
-        
-        const csvText = await response.text();
-        processCSVData(csvText);
-        
-      } catch (error) {
-        document.getElementById('subtitle').textContent = 'Erro ao carregar dados da planilha';
-        document.getElementById('loadingIndicator').textContent = `Erro: ${error.message}`;
-        document.getElementById('loadingIndicator').className = "error";
-        loadSampleData();
-      }
-    }
+        loadingEl.style.display = 'block';
+        loadingEl.className = 'loading';
+        loadingEl.textContent = 'Carregando dados...';
 
-    async function loadWeightsData(csvText) {
-      try {
-        if (!csvText) {
-          const response = await fetch(SPREADSHEET_URL);
-          if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
-          csvText = await response.text();
-        }
-        processWeightsCSVData(csvText);
-      } catch (error) {
-        weightsMap = null;
-        stockWeightsMap = {};
-        sectorWeightsMap = {};
-      }
-    }
-
-    function parseWeightValue(value) {
-      if (!value) return 0;
-      let cleanValue = value.toString().replace(/"/g, '').trim();
-      cleanValue = cleanValue.replace('%', '');
-      if (cleanValue.includes(',')) {
-        cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-      }
-      const num = parseFloat(cleanValue);
-      return isNaN(num) ? 0 : num;
-    }
-
-    // Função para limpar nomes (remove aspas, espaços duplicados, caracteres iniciais não‑alfabéticos)
-    function cleanName(name) {
-      if (!name) return '';
-      return name
-        .replace(/"/g, '')
-        .replace(/\s+/g, ' ')
-        .replace(/^[\d\s\-\.]+/, '') // remove dígitos, espaços, traços e pontos no início
-        .trim();
-    }
-
-    function processWeightsCSVData(csvText) {
-      try {
-        const linhas = csvText.split("\n").map(l => {
-          let result = [];
-          let current = '';
-          let inQuotes = false;
-          
-          for (let i = 0; i < l.length; i++) {
-            const char = l[i];
-            if (char === '"') {
-              inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-              result.push(current);
-              current = '';
-            } else {
-              current += char;
-            }
-          }
-          result.push(current);
-          return result;
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
         });
-        
-        // --- PESOS DOS GRUPOS (coluna 308, linhas 1 a 6) ---
-        const colunaKW = 308;
-        const dados = {
-          soma5Raw: linhas[1] && linhas[1][colunaKW] ? parseWeightValue(linhas[1][colunaKW]) : 0,
-          soma10Raw: linhas[2] && linhas[2][colunaKW] ? parseWeightValue(linhas[2][colunaKW]) : 0,
-          soma15Raw: linhas[3] && linhas[3][colunaKW] ? parseWeightValue(linhas[3][colunaKW]) : 0,
-          soma20Raw: linhas[4] && linhas[4][colunaKW] ? parseWeightValue(linhas[4][colunaKW]) : 0,
-          soma25Raw: linhas[5] && linhas[5][colunaKW] ? parseWeightValue(linhas[5][colunaKW]) : 0,
-          soma30Raw: linhas[6] && linhas[6][colunaKW] ? parseWeightValue(linhas[6][colunaKW]) : 0
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Erro ${response.status}: ${errorText}`);
+        }
+
+        const dados = await response.json();
+
+        // Atualiza subtítulo
+        subtitleEl.textContent = `Última atualização: ${dados.ultimaData} - Ibovespa: ${dados.ultimoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pontos`;
+
+        // Atualiza gráfico
+        atualizarGrafico(dados.chartData);
+
+        // Atualiza tabelas
+        preencherTabela1(dados.tabela1);
+        preencherTabela2(dados.tabela2);
+        preencherTabela3(dados.tabela3);
+
+        loadingEl.style.display = 'none';
+      } catch (error) {
+        console.error(error);
+        loadingEl.className = 'error';
+        loadingEl.textContent = `Erro ao carregar dados: ${error.message}`;
+      }
+    }
+
+    // Funções de renderização
+    function atualizarGrafico(chartData) {
+      chartDataCache = chartData; // guarda para o tooltip
+
+      if (!ibovespaChart) {
+        const ctx = document.getElementById('ibovespaChart').getContext('2d');
+        const createGradient = (ctx, chartArea) => {
+          const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+          gradient.addColorStop(0, "#F6F8FC");
+          gradient.addColorStop(0.5, "#8EA8D7");
+          gradient.addColorStop(1, "#164CAD");
+          return gradient;
         };
-        
-        Object.keys(dados).forEach(key => {
-          if (typeof dados[key] !== 'number' || isNaN(dados[key])) dados[key] = 0;
-        });
-        dados.somaRestanteRaw = 100 - dados.soma30Raw;
-        weightsMap = dados;
-        
-        // --- PESOS INDIVIDUAIS DAS AÇÕES (coluna 300 -> coluna 301) ---
-        stockWeightsMap = {};
-        for (let i = 0; i < linhas.length; i++) {
-          const row = linhas[i];
-          if (row.length > 301) {
-            const stockNameRaw = row[300] ? row[300].replace(/"/g, '').trim() : '';
-            if (stockNameRaw !== '') {
-              const stockName = cleanName(stockNameRaw);
-              const weightStr = row[301] ? row[301].replace(/"/g, '').trim() : '';
-              if (weightStr !== '') {
-                const weight = parseWeightValue(weightStr);
-                if (!isNaN(weight)) stockWeightsMap[stockName] = weight;
+
+        ibovespaChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            datasets: [{
+              label: 'Ibovespa',
+              data: chartData,
+              borderColor: '#164CAD',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.15,
+              fill: true,
+              backgroundColor: (context) => {
+                const chart = context.chart;
+                const { ctx, chartArea } = chart;
+                if (!chartArea) return null;
+                return createGradient(ctx, chartArea);
+              }
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  color: '#000000',
+                  font: { family: 'Montserrat', size: 14, weight: '300' }
+                }
+              },
+              tooltip: { enabled: false, external: (context) => showCustomTooltip(context.chart, context.tooltip) }
+            },
+            scales: {
+              x: {
+                type: 'time',
+                time: {
+                  unit: 'month',
+                  displayFormats: { month: 'MMM - yy' },
+                  tooltipFormat: 'dd/MM/yyyy'
+                },
+                ticks: {
+                  color: '#000000',
+                  maxRotation: 45,
+                  minRotation: 45,
+                  font: { family: 'Montserrat', size: 12, weight: '300' },
+                  callback: function(value) {
+                    const date = new Date(value);
+                    const month = date.getMonth();
+                    const year = date.getFullYear().toString().slice(-2);
+                    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+                    return `${meses[month]} - ${year}`;
+                  }
+                },
+                grid: { color: 'rgba(0,0,0,0.05)' }
+              },
+              y: {
+                ticks: {
+                  color: '#000000',
+                  font: { family: 'Montserrat', size: 12, weight: '300' },
+                  callback: (v) => `${v.toFixed(1)}%`
+                },
+                grid: { color: 'rgba(0,0,0,0.05)' },
+                title: {
+                  display: true,
+                  text: 'Variação Percentual (%)',
+                  color: '#000000',
+                  font: { family: 'Montserrat', size: 12, weight: '300' }
+                }
               }
             }
           }
-        }
-
-        // --- PESOS INDIVIDUAIS DOS SETORES (coluna 304 -> coluna 305) ---
-        sectorWeightsMap = {};
-        for (let i = 0; i < linhas.length; i++) {
-          const row = linhas[i];
-          if (row.length > 306) {
-            const sectorNameRaw = row[304] ? row[304].replace(/"/g, '').trim() : '';
-            if (sectorNameRaw !== '') {
-              const sectorName = cleanName(sectorNameRaw);
-              const weightStr = row[305] ? row[305].replace(/"/g, '').trim() : '';
-              if (weightStr !== '') {
-                const weight = parseWeightValue(weightStr);
-                if (!isNaN(weight)) sectorWeightsMap[sectorName] = weight;
-              }
-            }
-          }
-        }
-
-      } catch (error) {
-        weightsMap = null;
-        stockWeightsMap = {};
-        sectorWeightsMap = {};
-      }
-    }
-
-    function processCSVData(csvText) {
-      try {
-        const lines = csvText.split('\n');
-        allIbovespaData = [];
-        acoesNames = [];
-        sectorNames = [];
-        
-        // ---- Extrai os nomes das ações (col 138–267) e setores (col 273–300) da segunda linha ----
-        if (lines.length > 1) {
-          const segundaLinha = lines[1];
-          const colunasSegundaLinha = parseCSVLine(segundaLinha);
-          
-          // Nomes das ações (col 137 a 267) - índice 137 a 267
-          for (let col = 137; col <= 267 && col < colunasSegundaLinha.length; col++) {
-            let nomeAcao = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Ação ${col - 137}`;
-            nomeAcao = cleanName(nomeAcao);
-            if (!nomeAcao || nomeAcao === '') nomeAcao = `Ação ${col - 137}`;
-            acoesNames.push(nomeAcao);
-          }
-          
-          // Nomes dos setores (col 273 a 300) - índice 273 a 300
-          for (let col = 273; col <= 300 && col < colunasSegundaLinha.length; col++) {
-            let nomeSetor = colunasSegundaLinha[col]?.trim().replace(/"/g, '') || `Setor ${col - 272}`;
-            nomeSetor = cleanName(nomeSetor);
-            if (!nomeSetor || nomeSetor === '') nomeSetor = `Setor ${col - 272}`;
-            sectorNames.push(nomeSetor);
-          }
-        }
-        
-        // Padrões caso não tenha encontrado
-        if (acoesNames.length === 0) {
-          for (let i = 1; i <= 131; i++) acoesNames.push(`Ação ${i}`);
-        }
-        if (sectorNames.length === 0) {
-          for (let i = 1; i <= 28; i++) sectorNames.push(`Setor ${i}`);
-        }
-        
-        // ---- Encontra o início dos dados ----
-        let startIndex = -1;
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].includes('A. Pontos') || (lines[i].includes('Data') && lines[i].includes('Ibovespa'))) {
-            startIndex = i;
-            break;
-          }
-        }
-        if (startIndex === -1) {
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i].match(/\d{1,2}\/\d{1,2}\/\d{4}/) && lines[i].match(/\d+\.?\d*/)) {
-              startIndex = i;
-              break;
-            }
-          }
-        }
-        if (startIndex === -1) startIndex = 1;
-        
-        // ---- Processa cada linha de dados ----
-        for (let i = startIndex; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line || line.length === 0 || line.startsWith('"') || line.includes('A. Pontos')) continue;
-          
-          let columns = parseCSVLine(line);
-          if (columns.length < 2) continue;
-          
-          const dateStr = columns[0].trim().replace(/"/g, '');
-          const valueStr = columns[1].trim().replace(/"/g, '');
-          
-          let date;
-          try {
-            if (dateStr.match(/\d{1,2}\/\d{1,2}\/\d{4}/)) {
-              const parts = dateStr.split('/');
-              date = new Date(parts[2], parts[1] - 1, parts[0]);
-            } else {
-              date = new Date(dateStr);
-            }
-            if (isNaN(date.getTime())) continue;
-          } catch (e) {
-            continue;
-          }
-          
-          const cleanedValue = valueStr.replace(/\./g, '').replace(',', '.');
-          const value = parseFloat(cleanedValue);
-          if (isNaN(value) || value <= 0) continue;
-          
-          // Empresas (col 3–32) - índice 3 a 32
-          const empresas = [];
-          for (let col = 3; col <= 32 && col < columns.length; col++) {
-            const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
-            const val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
-            empresas.push(isNaN(val) ? 0 : val);
-          }
-          
-          // Ações individuais (col 138–267) - índice 138 a 267
-          const acoesDia = [];
-          for (let col = 137; col <= 267 && col < columns.length; col++) {
-            const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
-            const val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
-            acoesDia.push(isNaN(val) ? 0 : val);
-          }
-          
-          // Setores (col 273–300) - índice 273 a 300
-          const setoresDia = [];
-          for (let col = 273; col <= 300 && col < columns.length; col++) {
-            const valStr = columns[col]?.trim().replace(/"/g, '') || '0';
-            const val = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
-            setoresDia.push(isNaN(val) ? 0 : val);
-          }
-          
-          allIbovespaData.push({
-            date: date,
-            dateStr: dateStr,
-            value: value,
-            formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            empresas: empresas,
-            acoes: acoesDia,
-            setores: setoresDia
-          });
-        }
-        
-        if (allIbovespaData.length === 0) throw new Error('Nenhum dado válido encontrado.');
-        
-        allIbovespaData.sort((a, b) => a.date - b.date);
-        
-        const lastRecord = allIbovespaData[allIbovespaData.length - 1];
-        document.getElementById('subtitle').textContent = `Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
-        
-        // Carrega pesos (grupos, ações e setores)
-        loadWeightsData(csvText).then(() => {
-          setupDateInputs();
-          document.getElementById('periodControls').style.display = 'flex';
-          document.getElementById('loadingIndicator').style.display = 'none';
-          createMainChart();
-          filterDataByMonths(1);
-          setupPeriodButtons();
-          setupCustomRangeButton();
-          setupDateValidation();
         });
-        
-      } catch (error) {
-        document.getElementById('subtitle').textContent = 'Erro ao processar dados da planilha';
-        document.getElementById('loadingIndicator').textContent = `Erro: ${error.message}`;
-        document.getElementById('loadingIndicator').className = "error";
-        loadSampleData();
+      } else {
+        ibovespaChart.data.datasets[0].data = chartData;
+        ibovespaChart.update();
       }
     }
-    
+
+    function preencherTabela1(linhas) {
+      const tbody = document.getElementById('contributionsTableBody1');
+      tbody.innerHTML = '';
+      if (!linhas || linhas.length === 0) {
+        document.getElementById('tableContainer1').style.display = 'none';
+        document.getElementById('tableTitle1').style.display = 'none';
+        return;
+      }
+      linhas.forEach(l => {
+        const tr = document.createElement('tr');
+        if (l.destaque) tr.style.backgroundColor = '#f0f5ff';
+        tr.innerHTML = `
+          <td class="group-cell">${l.nome}</td>
+          <td class="value-cell" style="color: ${l.variacao >= 0 ? '#008000' : '#ff0000'}">${l.variacao >= 0 ? '+' : ''}${l.variacao.toFixed(2)}%</td>
+          <td class="value-cell" style="color: ${l.contribuicao >= 0 ? '#008000' : '#ff0000'}">${l.contribuicao >= 0 ? '+' : ''}${l.contribuicao.toFixed(2)}%</td>
+          <td class="value-cell" style="color: #1E4DB7">${typeof l.peso === 'number' ? l.peso.toFixed(2)+'%' : l.peso}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('tableContainer1').style.display = 'block';
+      document.getElementById('tableTitle1').style.display = 'block';
+    }
+
+    function preencherTabela2(linhas) {
+      const tbody = document.getElementById('contributionsTableBody2');
+      tbody.innerHTML = '';
+      if (!linhas || linhas.length === 0) {
+        document.getElementById('tableContainer2').style.display = 'none';
+        document.getElementById('tableTitle2').style.display = 'none';
+        return;
+      }
+      linhas.forEach(l => {
+        const tr = document.createElement('tr');
+        if (l.destaque) tr.style.backgroundColor = '#f0f5ff';
+        tr.innerHTML = `
+          <td class="group-cell">${l.nome}</td>
+          <td class="value-cell" style="color: ${l.variacao >= 0 ? '#008000' : '#ff0000'}">${l.variacao >= 0 ? '+' : ''}${l.variacao.toFixed(2)}%</td>
+          <td class="value-cell" style="color: ${l.contribuicao >= 0 ? '#008000' : '#ff0000'}">${l.contribuicao >= 0 ? '+' : ''}${l.contribuicao.toFixed(2)}%</td>
+          <td class="value-cell" style="color: #1E4DB7">${l.peso}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('tableContainer2').style.display = 'block';
+      document.getElementById('tableTitle2').style.display = 'block';
+    }
+
+    function preencherTabela3(linhas) {
+      const tbody = document.getElementById('contributionsTableBody3');
+      tbody.innerHTML = '';
+      if (!linhas || linhas.length === 0) {
+        document.getElementById('tableContainer3').style.display = 'none';
+        document.getElementById('tableTitle3').style.display = 'none';
+        return;
+      }
+      linhas.forEach(l => {
+        const tr = document.createElement('tr');
+        if (l.destaque) tr.style.backgroundColor = '#f0f5ff';
+        tr.innerHTML = `
+          <td class="group-cell">${l.nome}</td>
+          <td class="value-cell" style="color: ${l.variacao >= 0 ? '#008000' : '#ff0000'}">${l.variacao >= 0 ? '+' : ''}${l.variacao.toFixed(2)}%</td>
+          <td class="value-cell" style="color: ${l.contribuicao >= 0 ? '#008000' : '#ff0000'}">${l.contribuicao >= 0 ? '+' : ''}${l.contribuicao.toFixed(2)}%</td>
+          <td class="value-cell" style="color: #1E4DB7">${l.peso}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('tableContainer3').style.display = 'block';
+      document.getElementById('tableTitle3').style.display = 'block';
+    }
+
+    // Configuração dos inputs de data (validação e valores iniciais)
     function setupDateInputs() {
-      if (allIbovespaData.length === 0) return;
-      
-      const minDate = allIbovespaData[0].date;
-      const maxDate = allIbovespaData[allIbovespaData.length - 1].date;
-      
-      const formatDateForInput = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+      const hoje = new Date();
+      const umMesAtras = new Date(hoje);
+      umMesAtras.setMonth(hoje.getMonth() - 1);
+
+      const formatDate = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
       };
-      
-      const defaultEndDate = maxDate;
-      const defaultStartDate = new Date(defaultEndDate);
-      defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
-      
-      const startDateInput = document.getElementById('startDate');
-      const endDateInput = document.getElementById('endDate');
-      
-      startDateInput.min = formatDateForInput(minDate);
-      startDateInput.max = formatDateForInput(maxDate);
-      startDateInput.value = formatDateForInput(defaultStartDate);
-      
-      endDateInput.min = formatDateForInput(minDate);
-      endDateInput.max = formatDateForInput(maxDate);
-      endDateInput.value = formatDateForInput(defaultEndDate);
+
+      startDateInput.value = formatDate(umMesAtras);
+      endDateInput.value = formatDate(hoje);
     }
-    
+
     function setupDateValidation() {
-      const startDateInput = document.getElementById('startDate');
-      const endDateInput = document.getElementById('endDate');
-      const startDateError = document.getElementById('startDateError');
-      const endDateError = document.getElementById('endDateError');
-      
       startDateInput.addEventListener('change', function() {
-        const selectedDate = new Date(this.value);
-        const minAllowedDate = MIN_ALLOWED_DATE;
-        
-        if (selectedDate < minAllowedDate) {
+        const selected = new Date(this.value);
+        if (selected < MIN_ALLOWED_DATE) {
           startDateError.textContent = 'Menor data disponível 30/12/2024';
           startDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
           startDateError.style.display = 'none';
           this.style.borderColor = '#ccc';
-          
-          const endDate = new Date(endDateInput.value);
-          if (endDate < selectedDate) {
+          if (new Date(endDateInput.value) < selected) {
             endDateInput.value = this.value;
           }
         }
       });
-      
+
       endDateInput.addEventListener('change', function() {
-        const selectedDate = new Date(this.value);
-        const minAllowedDate = MIN_ALLOWED_DATE;
-        
-        if (selectedDate < minAllowedDate) {
+        const selected = new Date(this.value);
+        if (selected < MIN_ALLOWED_DATE) {
           endDateError.textContent = 'Menor data disponível 30/12/2024';
           endDateError.style.display = 'block';
           this.style.borderColor = '#ff0000';
         } else {
           endDateError.style.display = 'none';
           this.style.borderColor = '#ccc';
-          
-          const startDate = new Date(startDateInput.value);
-          if (startDate > selectedDate) {
+          if (new Date(startDateInput.value) > selected) {
             startDateInput.value = this.value;
-            if (startDate < minAllowedDate) {
-              startDateError.textContent = 'Menor data disponível 30/12/2024';
-              startDateError.style.display = 'block';
-              startDateInput.style.borderColor = '#ff0000';
-            }
           }
         }
       });
     }
-    
-    function parseCSVLine(line) {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          result.push(current);
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      result.push(current);
-      return result;
-    }
-    
-    function convertToPercentageData(originalData) {
-      if (!originalData || originalData.length === 0) return [];
-      
-      const firstValue = originalData[0].value;
-      return originalData.map(item => ({
-        x: item.date,
-        y: ((item.value / firstValue) - 1) * 100
-      }));
-    }
-    
-    function calculateGroupWeights() {
-      if (weightsMap && typeof weightsMap.soma5Raw === 'number') {
-        const soma5 = weightsMap.soma5Raw;
-        const soma10 = weightsMap.soma10Raw;
-        const soma15 = weightsMap.soma15Raw;
-        const soma20 = weightsMap.soma20Raw;
-        const soma25 = weightsMap.soma25Raw;
-        const soma30 = weightsMap.soma30Raw;
-        const somaRest = weightsMap.somaRestanteRaw;
 
-        return {
-          soma5Raw: Math.round(soma5 * 100) / 100,
-          soma10Raw: Math.round(soma10 * 100) / 100,
-          soma15Raw: Math.round(soma15 * 100) / 100,
-          soma20Raw: Math.round(soma20 * 100) / 100,
-          soma25Raw: Math.round(soma25 * 100) / 100,
-          soma30Raw: Math.round(soma30 * 100) / 100,
-          somaRestanteRaw: Math.round(somaRest * 100) / 100,
-          peso5Pct: Math.round((soma5 / 100) * 10000) / 10000,
-          peso10Pct: Math.round((soma10 / 100) * 10000) / 10000,
-          peso15Pct: Math.round((soma15 / 100) * 10000) / 10000,
-          peso20Pct: Math.round((soma20 / 100) * 10000) / 10000,
-          peso25Pct: Math.round((soma25 / 100) * 10000) / 10000,
-          peso30Pct: Math.round((soma30 / 100) * 10000) / 10000,
-          pesoRestantePct: Math.round((somaRest / 100) * 10000) / 10000,
-          pesoIbovPct: 1
-        };
-      }
-
-      return {
-        soma5Raw: 0,
-        soma10Raw: 0,
-        soma15Raw: 0,
-        soma20Raw: 0,
-        soma25Raw: 0,
-        soma30Raw: 0,
-        somaRestanteRaw: 0,
-        peso5Pct: 0,
-        peso10Pct: 0,
-        peso15Pct: 0,
-        peso20Pct: 0,
-        peso25Pct: 0,
-        peso30Pct: 0,
-        pesoRestantePct: 0,
-        pesoIbovPct: 1
-      };
-    }
-    
-    function createMainChart() {
-      if (allIbovespaData.length === 0) return;
-      
-      const canvas = document.getElementById('ibovespaChart');
-      const ctx = canvas.getContext('2d');
-      
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-      
-      const createGradient = (ctx, chartArea) => {
-        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-        gradient.addColorStop(0, "#F6F8FC");
-        gradient.addColorStop(0.5, "#8EA8D7");
-        gradient.addColorStop(1, "#164CAD");
-        return gradient;
-      };
-      
-      const initialData = convertToPercentageData(allIbovespaData);
-      
-      ibovespaChart = new Chart(ctx, {
-        type: "line",
-        data: {
-          datasets: [
-            {
-              label: "Ibovespa",
-              data: initialData,
-              borderColor: "#164CAD",
-              borderWidth: 1.5,
-              pointRadius: 0,
-              tension: 0.15,
-              fill: true,
-              backgroundColor: function(context) {
-                const chart = context.chart;
-                const {ctx, chartArea} = chart;
-                if (!chartArea) return null;
-                return createGradient(ctx, chartArea);
-              },
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            intersect: false,
-            mode: 'index',
-          },
-          plugins: {
-            legend: {
-              position: "top",
-              labels: {
-                usePointStyle: true,
-                pointStyle: "circle",
-                color: "#000000",
-                font: {
-                  family: "Montserrat",
-                  size: 14,
-                  weight: "300",
-                },
-              },
-            },
-            tooltip: {
-              enabled: false,
-              external: (context) => showCustomTooltip(context.chart, context.tooltip)
-            },
-          },
-          scales: {
-            x: {
-              type: "time",
-              time: {
-                unit: "month",
-                displayFormats: { month: "MMM - yy" },
-                tooltipFormat: "dd/MM/yyyy"
-              },
-              ticks: {
-                color: "#000000",
-                maxRotation: 45,
-                minRotation: 45,
-                font: {
-                  family: "Montserrat",
-                  size: 12,
-                  weight: "300",
-                },
-                callback: function(value) {
-                  const date = new Date(value);
-                  const month = date.getMonth();
-                  const year = date.getFullYear().toString().slice(-2);
-                  const mesesPortugues = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                  return `${mesesPortugues[month]} - ${year}`;
-                }
-              },
-              grid: { color: "rgba(0,0,0,0.05)" },
-            },
-            y: {
-              ticks: {
-                color: "#000000",
-                font: {
-                  family: "Montserrat",
-                  size: 12,
-                  weight: "300",
-                },
-                callback: (v) => `${v.toFixed(1)}%`,
-              },
-              grid: { color: "rgba(0,0,0,0.05)" },
-              title: {
-                display: true,
-                text: 'Variação Percentual (%)',
-                color: "#000000",
-                font: {
-                  family: "Montserrat",
-                  size: 12,
-                  weight: "300",
-                }
-              }
-            },
-          },
-        },
-      });
-    }
-    
-    function filterDataByMonths(months) {
-      if (allIbovespaData.length === 0) return;
-      
-      const cutoffDate = new Date();
-      cutoffDate.setMonth(cutoffDate.getMonth() - months);
-      
-      filteredData = allIbovespaData.filter(record => record.date >= cutoffDate);
-      
-      if (filteredData.length === 0) filteredData = [...allIbovespaData];
-      
-      updateMainChartData();
-      updateContributionsTable();
-    }
-    
-    function filterDataByCustomRange(startDate, endDate) {
-      if (allIbovespaData.length === 0) return false;
-      
-      const endDateAdjusted = new Date(endDate);
-      endDateAdjusted.setDate(endDateAdjusted.getDate() + 1);
-      
-      filteredData = allIbovespaData.filter(record => {
-        return record.date >= startDate && record.date < endDateAdjusted;
-      });
-      
-      if (filteredData.length === 0) {
-        alert('Nenhum dado encontrado para o intervalo selecionado.');
-        return false;
-      }
-      
-      updateMainChartData();
-      updateContributionsTable();
-      
-      return true;
-    }
-    
-    function updateMainChartData() {
-      if (!ibovespaChart || filteredData.length === 0) return;
-      
-      ibovespaChart.data.datasets[0].data = convertToPercentageData(filteredData);
-      ibovespaChart.update();
-    }
-    
-    function updateContributionsTable() {
-      if (filteredData.length < 2) {
-        for (let i = 1; i <= 3; i++) {
-          document.getElementById(`tableContainer${i}`).style.display = 'none';
-          document.getElementById(`tableTitle${i}`).style.display = 'none';
-        }
-        return;
-      }
-      
-      const valorInicialIbovespa = filteredData[0].value;
-      const valorFinalIbovespa = filteredData[filteredData.length - 1].value;
-      const variacaoIbovespa = valorFinalIbovespa - valorInicialIbovespa;
-      
-      if (variacaoIbovespa === 0) {
-        for (let i = 1; i <= 3; i++) {
-          document.getElementById(`tableContainer${i}`).style.display = 'none';
-          document.getElementById(`tableTitle${i}`).style.display = 'none';
-        }
-        return;
-      }
-      
-      updateTable1(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
-      updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
-      updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa);
-    }
-    
-    function updateTable1(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
-      const pesos = calculateGroupWeights();
-      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
-      
-      const grupos = [
-        { nome: "5 Maiores Empresas", colInicio: 0, colFim: 4, pesoRaw: pesos.soma5Raw },
-        { nome: "10 Maiores Empresas", colInicio: 0, colFim: 9, pesoRaw: pesos.soma10Raw },
-        { nome: "15 Maiores Empresas", colInicio: 0, colFim: 14, pesoRaw: pesos.soma15Raw },
-        { nome: "20 Maiores Empresas", colInicio: 0, colFim: 19, pesoRaw: pesos.soma20Raw },
-        { nome: "25 Maiores Empresas", colInicio: 0, colFim: 24, pesoRaw: pesos.soma25Raw },
-        { nome: "30 Maiores Empresas", colInicio: 0, colFim: 29, pesoRaw: pesos.soma30Raw }
-      ];
-      
-      let contribuicao30Maiores = 0;
-      let variacao30Maiores = 0;
-      
-      grupos.forEach(grupo => {
-        let somaEmpresas = 0;
-        
-        for (let i = 1; i < filteredData.length; i++) {
-          const registro = filteredData[i];
-          if (registro.empresas && registro.empresas.length > 0) {
-            for (let j = grupo.colInicio; j <= grupo.colFim && j < registro.empresas.length; j++) {
-              somaEmpresas += registro.empresas[j] || 0;
-            }
-          }
-        }
-        
-        const contribuicaoPercentual = (somaEmpresas / variacaoIbovespa) * 100;
-        const variacaoPercentual = (somaEmpresas / valorInicialIbovespa) * 100;
-        
-        if (grupo.nome === "30 Maiores Empresas") {
-          contribuicao30Maiores = contribuicaoPercentual;
-          variacao30Maiores = variacaoPercentual;
-        }
-        
-        grupo.contribuicao = contribuicaoPercentual;
-        grupo.variacao = variacaoPercentual;
-      });
-      
-      const contribuicaoRestante = 100 - contribuicao30Maiores;
-      const variacaoRestante = variacaoPercentualIbovespa - variacao30Maiores;
-      
-      const tableBody = document.getElementById('contributionsTableBody1');
-      tableBody.innerHTML = '';
-      
-      grupos.forEach(grupo => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="group-cell">${grupo.nome}</td>
-          <td class="value-cell" style="color: ${grupo.variacao >= 0 ? '#008000' : '#ff0000'}">
-            ${grupo.variacao >= 0 ? '+' : ''}${grupo.variacao.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: ${grupo.contribuicao >= 0 ? '#008000' : '#ff0000'}">
-            ${grupo.contribuicao >= 0 ? '+' : ''}${grupo.contribuicao.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7">
-            ${grupo.pesoRaw.toFixed(2)}%
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-      
-      const restanteRow = document.createElement('tr');
-      restanteRow.innerHTML = `
-        <td class="group-cell">Restante</td>
-        <td class="value-cell" style="color: ${variacaoRestante >= 0 ? '#008000' : '#ff0000'}">
-          ${variacaoRestante >= 0 ? '+' : ''}${variacaoRestante.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: ${contribuicaoRestante >= 0 ? '#008000' : '#ff0000'}">
-          ${contribuicaoRestante >= 0 ? '+' : ''}${contribuicaoRestante.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7">
-          ${pesos.somaRestanteRaw.toFixed(2)}%
-        </td>
-      `;
-      tableBody.appendChild(restanteRow);
-      
-      const ibovespaRow = document.createElement('tr');
-      ibovespaRow.style.backgroundColor = '#f0f5ff';
-      ibovespaRow.style.fontWeight = 'bold';
-      ibovespaRow.innerHTML = `
-        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
-        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-          100.00%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-          100.00%
-        </td>
-      `;
-      tableBody.appendChild(ibovespaRow);
-      
-      document.getElementById('tableContainer1').style.display = 'block';
-      document.getElementById('tableTitle1').style.display = 'block';
-    }
-    
-    function updateTable2(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
-      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
-      
-      const contribuicoesAcoes = [];
-      
-      for (let acaoIndex = 0; acaoIndex < 131; acaoIndex++) {
-        let somaAcao = 0;
-        
-        for (let i = 1; i < filteredData.length; i++) {
-          const registro = filteredData[i];
-          if (registro.acoes && registro.acoes.length > acaoIndex) {
-            somaAcao += registro.acoes[acaoIndex] || 0;
-          }
-        }
-        
-        const variacaoPercentualAcao = (somaAcao / valorInicialIbovespa) * 100;
-        const contribuicaoPercentualAcao = (somaAcao / variacaoIbovespa) * 100;
-        
-        const nomeAcao = acoesNames[acaoIndex] || `Ação ${acaoIndex + 1}`;
-        
-        contribuicoesAcoes.push({
-          nome: nomeAcao,
-          somaPontos: somaAcao,
-          variacaoPercentual: variacaoPercentualAcao,
-          contribuicaoPercentual: contribuicaoPercentualAcao,
-          indice: acaoIndex
-        });
-      }
-      
-      contribuicoesAcoes.sort((a, b) => b.somaPontos - a.somaPontos);
-      const top7Acoes = contribuicoesAcoes.slice(0, 7);
-      
-      const tableBody = document.getElementById('contributionsTableBody2');
-      tableBody.innerHTML = '';
-      
-      top7Acoes.forEach(acao => {
-        const normalizedName = acao.nome;
-        let pesoAtual = '-';
-        if (stockWeightsMap[normalizedName] !== undefined) {
-          pesoAtual = stockWeightsMap[normalizedName].toFixed(2) + '%';
-        }
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="group-cell">${acao.nome}</td>
-          <td class="value-cell" style="color: ${acao.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${acao.variacaoPercentual >= 0 ? '+' : ''}${acao.variacaoPercentual.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: ${acao.contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${acao.contribuicaoPercentual >= 0 ? '+' : ''}${acao.contribuicaoPercentual.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7">
-            ${pesoAtual}
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-      
-      const ibovespaRow = document.createElement('tr');
-      ibovespaRow.style.backgroundColor = '#f0f5ff';
-      ibovespaRow.style.fontWeight = 'bold';
-      ibovespaRow.innerHTML = `
-        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
-        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-          100.00%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-          100.00%
-        </td>
-      `;
-      tableBody.appendChild(ibovespaRow);
-      
-      document.getElementById('tableContainer2').style.display = 'block';
-      document.getElementById('tableTitle2').style.display = 'block';
-    }
-    
-    function updateTable3(valorInicialIbovespa, valorFinalIbovespa, variacaoIbovespa) {
-      const variacaoPercentualIbovespa = (variacaoIbovespa / valorInicialIbovespa) * 100;
-      
-      const contribuicoesSetores = [];
-      
-      for (let setorIndex = 0; setorIndex < 28; setorIndex++) {
-        let somaSetor = 0;
-        
-        for (let i = 1; i < filteredData.length; i++) {
-          const registro = filteredData[i];
-          if (registro.setores && registro.setores.length > setorIndex) {
-            somaSetor += registro.setores[setorIndex] || 0;
-          }
-        }
-        
-        const variacaoPercentualSetor = (somaSetor / valorInicialIbovespa) * 100;
-        const contribuicaoPercentualSetor = (somaSetor / variacaoIbovespa) * 100;
-        
-        const nomeSetor = sectorNames[setorIndex] || `Setor ${setorIndex + 1}`;
-        
-        contribuicoesSetores.push({
-          nome: nomeSetor,
-          somaPontos: somaSetor,
-          variacaoPercentual: variacaoPercentualSetor,
-          contribuicaoPercentual: contribuicaoPercentualSetor,
-          indice: setorIndex
-        });
-      }
-      
-      contribuicoesSetores.sort((a, b) => b.somaPontos - a.somaPontos);
-      const top7Setores = contribuicoesSetores.slice(0, 7);
-      
-      const tableBody = document.getElementById('contributionsTableBody3');
-      tableBody.innerHTML = '';
-      
-      top7Setores.forEach(setor => {
-        const normalizedName = setor.nome;
-        let pesoAtual = '-';
-        if (sectorWeightsMap[normalizedName] !== undefined) {
-          pesoAtual = sectorWeightsMap[normalizedName].toFixed(2) + '%';
-        }
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="group-cell">${setor.nome}</td>
-          <td class="value-cell" style="color: ${setor.variacaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${setor.variacaoPercentual >= 0 ? '+' : ''}${setor.variacaoPercentual.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: ${setor.contribuicaoPercentual >= 0 ? '#008000' : '#ff0000'}">
-            ${setor.contribuicaoPercentual >= 0 ? '+' : ''}${setor.contribuicaoPercentual.toFixed(2)}%
-          </td>
-          <td class="value-cell" style="color: #1E4DB7">
-            ${pesoAtual}
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-      
-      const ibovespaRow = document.createElement('tr');
-      ibovespaRow.style.backgroundColor = '#f0f5ff';
-      ibovespaRow.style.fontWeight = 'bold';
-      ibovespaRow.innerHTML = `
-        <td class="group-cell" style="color: #1E4DB7; font-weight: bold;">Ibovespa</td>
-        <td class="value-cell" style="color: ${variacaoPercentualIbovespa >= 0 ? '#008000' : '#ff0000'}; font-weight: bold;">
-          ${variacaoPercentualIbovespa >= 0 ? '+' : ''}${variacaoPercentualIbovespa.toFixed(2)}%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-          100.00%
-        </td>
-        <td class="value-cell" style="color: #1E4DB7; font-weight: bold;">
-          100.00%
-        </td>
-      `;
-      tableBody.appendChild(ibovespaRow);
-      
-      document.getElementById('tableContainer3').style.display = 'block';
-      document.getElementById('tableTitle3').style.display = 'block';
-    }
-    
+    // Botões de período
     function setupPeriodButtons() {
-      const buttons = document.querySelectorAll('.period-btn');
-      buttons.forEach(btn => {
+      periodBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-          buttons.forEach(b => b.classList.remove('active'));
+          periodBtns.forEach(b => b.classList.remove('active'));
           this.classList.add('active');
-          
-          const period = this.getAttribute('data-period');
-          switch(period) {
-            case '1m': filterDataByMonths(1); break;
-            case '3m': filterDataByMonths(3); break;
-            case '6m': filterDataByMonths(6); break;
-            case '1y': filterDataByMonths(12); break;
-            case 'all':
-              filteredData = [...allIbovespaData];
-              updateMainChartData();
-              updateContributionsTable();
-              break;
-          }
+          const periodo = this.getAttribute('data-period');
+          carregarDados({ periodo });
         });
       });
     }
-    
+
+    // Botão de intervalo customizado
     function setupCustomRangeButton() {
-      const applyBtn = document.getElementById('applyCustomRange');
-      const startDateInput = document.getElementById('startDate');
-      const endDateInput = document.getElementById('endDate');
-      const periodButtons = document.querySelectorAll('.period-btn');
-      
       applyBtn.addEventListener('click', function() {
-        const startDate = new Date(startDateInput.value);
-        const endDate = new Date(endDateInput.value);
-        
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        const start = new Date(startDateInput.value);
+        const end = new Date(endDateInput.value);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
           alert('Por favor, selecione datas válidas.');
           return;
         }
-        
-        const minAllowedDate = MIN_ALLOWED_DATE;
-        
-        if (startDate < minAllowedDate || endDate < minAllowedDate) {
+
+        if (start < MIN_ALLOWED_DATE || end < MIN_ALLOWED_DATE) {
           alert('Menor data disponível 30/12/2024');
           return;
         }
-        
-        if (startDate > endDate) {
+
+        if (start > end) {
           alert('A data de início deve ser anterior à data de fim.');
           return;
         }
-        
-        periodButtons.forEach(btn => btn.classList.remove('active'));
-        
-        if (filterDataByCustomRange(startDate, endDate)) {
-          const formatDateForDisplay = (date) => {
-            return date.toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          };
-          
-          const lastRecord = filteredData[filteredData.length - 1];
-          document.getElementById('subtitle').textContent = 
-            `Intervalo: ${formatDateForDisplay(startDate)} até ${formatDateForDisplay(endDate)} - Ibovespa: ${lastRecord.formattedValue} pontos`;
-        }
+
+        periodBtns.forEach(b => b.classList.remove('active'));
+        carregarDados({ dataInicio: startDateInput.value, dataFim: endDateInput.value });
       });
     }
-    
-    // ---- Dados de exemplo (caso a planilha falhe) ----
-    function loadSampleData() {
-      allIbovespaData = [];
-      acoesNames = [];
-      sectorNames = [];
-      
-      const nomesExemploAcoes = ["VALE3", "PETR4", "ITUB4", "BBDC4", "ABEV3", "BBAS3", "WEGE3", "MGLU3", "RENT3", "SUZB3"];
-      for (let i = 0; i < 131; i++) {
-        acoesNames.push(i < nomesExemploAcoes.length ? nomesExemploAcoes[i] : `Ação ${i + 1}`);
-      }
-      
-      const nomesExemploSetores = ["Financeiro", "Mineração", "Petróleo", "Energia", "Siderurgia", "Varejo", "Alimentos", "Telecom", "Transporte", "Saúde", "Química", "Construção", "Papel", "Tecnologia", "Saneamento", "Seguros", "Educação", "Agronegócio", "Comércio", "Holding", "Logística", "Mídia", "Bebidas", "Turismo", "Metais", "Mecânica", "Farmacêutica", "Outros"];
-      for (let i = 0; i < 28; i++) {
-        sectorNames.push(i < nomesExemploSetores.length ? nomesExemploSetores[i] : `Setor ${i + 1}`);
-      }
-      
-      stockWeightsMap = {
-        "VALE3": 12.5, "PETR4": 10.2, "ITUB4": 8.7, "BBDC4": 6.3, "ABEV3": 5.1,
-        "BBAS3": 4.8, "WEGE3": 4.2, "MGLU3": 3.9, "RENT3": 3.5, "SUZB3": 3.1
-      };
-      
-      sectorWeightsMap = {
-        "Financeiro": 22.3, "Mineração": 15.7, "Petróleo": 14.2, "Energia": 12.8, "Siderurgia": 8.5,
-        "Varejo": 6.3, "Alimentos": 5.9, "Telecom": 5.1, "Transporte": 4.8, "Saúde": 4.4
-      };
-      
-      const startDate = new Date(2023, 0, 1);
-      const baseValue = 100000;
-      
-      for (let i = 0; i < 365; i++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + i);
-        
-        const randomChange = (Math.random() - 0.5) * 0.03;
-        const value = i === 0 ? baseValue : allIbovespaData[i-1].value * (1 + randomChange);
-        
-        const empresas = Array.from({ length: 30 }, () => 1000 + Math.random() * 4000);
-        const acoes = Array.from({ length: 131 }, () => 100 + Math.random() * 400);
-        const setores = Array.from({ length: 28 }, () => 500 + Math.random() * 1500);
-        
-        allIbovespaData.push({
-          date: currentDate,
-          dateStr: currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-          value: value,
-          formattedValue: value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          empresas: empresas,
-          acoes: acoes,
-          setores: setores
-        });
-      }
-      
-      const lastRecord = allIbovespaData[allIbovespaData.length - 1];
-      document.getElementById('subtitle').textContent = `DADOS DE EXEMPLO - Última atualização: ${lastRecord.dateStr} - Ibovespa: ${lastRecord.formattedValue} pontos`;
-      
-      weightsMap = null;
+
+    // Inicialização
+    function init() {
       setupDateInputs();
-      document.getElementById('periodControls').style.display = 'flex';
-      document.getElementById('loadingIndicator').style.display = 'none';
-      createMainChart();
-      filterDataByMonths(1);
+      setupDateValidation();
       setupPeriodButtons();
       setupCustomRangeButton();
-      setupDateValidation();
-    }
-    
-    function init() {
+      carregarDados({ periodo: '1m' }); // carrega padrão
       window.addEventListener('resize', () => {
         if (ibovespaChart) ibovespaChart.resize();
       });
-      loadIbovespaData();
     }
-    
+
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
