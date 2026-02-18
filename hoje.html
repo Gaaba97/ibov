@@ -132,7 +132,7 @@ async function carregarDados() {
     ibovespaBox.innerHTML = `
       <div>Ibovespa Hoje: <span>${data.valorIbovespaFormatado || '-'}</span></div>
       <div>Variação: <span>${data.variacaoIbovespaFormatada || '-'}</span></div>
-      <div>Atualizado em: <span>${data.dataAtualizacao || 'indisponível'}</span></div>
+      <div>Atualizado em <span>${data.dataAtualizacao || 'indisponível'}</span></div>
     `;
 
     dadosAcoes = data.acoes || [];
