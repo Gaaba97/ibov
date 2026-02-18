@@ -418,10 +418,17 @@ async function carregarDados() {
       }
     }
 
+    // --- Extrair data/hora de atualização (linha 197, coluna 0) ---
+    let dataAtualizacao = '';
+    if (linhasVar.length > 197 && linhasVar[197] && linhasVar[197].length > 0) {
+      dataAtualizacao = linhasVar[197][0] ? linhasVar[197][0].trim() : '';
+    }
+
     // Atualizar quadro
     ibovespaBox.innerHTML = `
       <div>Ibovespa Hoje: <span>${formatarNumeroBR(valorIbovespa)}</span></div>
       <div>Variação: <span>${formatarPercentual(variacaoIbovespaGlobal)}</span></div>
+      <div>Atualizado em: <span>${dataAtualizacao || 'indisponível'}</span></div>
     `;
 
     // --- Mapa ação -> setor (colunas 138..268, linhas 0 e 1) ---
