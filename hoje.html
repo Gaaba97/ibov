@@ -4,162 +4,33 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Hoje</title>
-
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
-
 <style>
-html, body {
-  margin:0;
-  padding:0;
-  background-color:#fff;
-  font-family:"DM Sans", sans-serif;
-  height:100%;
-}
-
-.navbar {
-  background-color:#000;
-  padding:12px 20px;
-  display:flex;
-  justify-content:flex-end;
-  gap:30px;
-  font-family:"Montserrat", sans-serif;
-}
-
-.navbar a {
-  color:#fff;
-  text-decoration:none;
-}
-
-.container {
-  width:95%;
-  max-width:1400px;
-  margin:30px auto;
-}
-
-.ibovespa-box {
-  border: 1px solid #000;
-  padding: 15px 20px;
-  margin-bottom: 25px;
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 400px;
-  font-family: "Montserrat", sans-serif;
-  background-color: #f9f9f9;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.ibovespa-box div {
-  margin: 5px 0;
-}
-
-.ibovespa-box span {
-  font-weight: 700;
-  color: #164CAD;
-}
-
-.header-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.header-container .table-title {
-  font-family: "Montserrat", sans-serif;
-  font-size: 18px;
-  color: #1E4DB7;
-  margin: 0;
-  flex: 1;
-  text-align: center; /* centraliza o texto */
-}
-
-.refresh-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #164CAD;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border: none;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.refresh-btn:hover {
-  background-color: #0d3a8c;
-}
-
-.refresh-btn:active {
-  transform: scale(0.95);
-}
-
-.refresh-img {
-  width: 28px;
-  height: auto;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.refresh-img:hover {
-  opacity: 0.7;
-}
-
-.refresh-img:active {
-  transform: scale(0.95);
-}
-
-.table-wrapper {
-  overflow-x:auto;
-  border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  position: relative;
-}
-
-.hoje-table {
-  width:100%;
-  border-collapse:collapse;
-  font-family:"Montserrat";
-  font-size:13px;
-}
-
-.hoje-table th {
-  background-color:#164CAD;
-  color:white;
-  padding:12px 8px;
-  text-align:center;
-  position: relative;
-  cursor: pointer;
-  user-select: none;
-}
-
-.hoje-table th.sortable:hover {
-  background-color: #1e5bbf;
-}
-
-.hoje-table th .sort-icon {
-  margin-left: 5px;
-  font-size: 14px;
-}
-
-.hoje-table td {
-  padding:10px 8px;
-  border-bottom:1px solid #e0e0e0;
-  text-align:center;
-}
-
-.hoje-table tbody tr:nth-child(even) {
-  background-color:#f9f9f9;
-}
+/* (mesmo estilo do original, sem alterações) */
+html, body { margin:0; padding:0; background-color:#fff; font-family:"DM Sans", sans-serif; height:100%; }
+.navbar { background-color:#000; padding:12px 20px; display:flex; justify-content:flex-end; gap:30px; font-family:"Montserrat", sans-serif; }
+.navbar a { color:#fff; text-decoration:none; }
+.container { width:95%; max-width:1400px; margin:30px auto; }
+.ibovespa-box { border:1px solid #000; padding:15px 20px; margin-bottom:25px; margin-left:auto; margin-right:auto; max-width:400px; font-family:"Montserrat", sans-serif; background-color:#f9f9f9; border-radius:4px; text-align:center; }
+.ibovespa-box div { margin:5px 0; }
+.ibovespa-box span { font-weight:700; color:#164CAD; }
+.header-container { display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px; }
+.header-container .table-title { font-family:"Montserrat", sans-serif; font-size:18px; color:#1E4DB7; margin:0; flex:1; text-align:center; }
+.refresh-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background-color:#164CAD; color:white; font-size:20px; cursor:pointer; transition:background-color 0.2s; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.2); }
+.refresh-btn:hover { background-color:#0d3a8c; }
+.refresh-btn:active { transform:scale(0.95); }
+.refresh-img { width:28px; height:auto; cursor:pointer; transition:opacity 0.2s; }
+.refresh-img:hover { opacity:0.7; }
+.refresh-img:active { transform:scale(0.95); }
+.table-wrapper { overflow-x:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); position:relative; }
+.hoje-table { width:100%; border-collapse:collapse; font-family:"Montserrat"; font-size:13px; }
+.hoje-table th { background-color:#164CAD; color:white; padding:12px 8px; text-align:center; position:relative; cursor:pointer; user-select:none; }
+.hoje-table th.sortable:hover { background-color:#1e5bbf; }
+.hoje-table th .sort-icon { margin-left:5px; font-size:14px; }
+.hoje-table td { padding:10px 8px; border-bottom:1px solid #e0e0e0; text-align:center; }
+.hoje-table tbody tr:nth-child(even) { background-color:#f9f9f9; }
 </style>
 </head>
-
 <body>
 
 <nav class="navbar">
@@ -168,411 +39,130 @@ html, body {
 </nav>
 
 <div class="container">
+  <div id="ibovespaBox" class="ibovespa-box"><div>Carregando...</div></div>
 
-<!-- Quadro da Variação do Ibovespa -->
-<div id="ibovespaBox" class="ibovespa-box">
-  <div>Carregando...</div>
-</div>
+  <div class="header-container">
+    <div class="table-title">Acompanhamento Diário - Ibovespa</div>
+    <div id="refreshButton" class="refresh-btn" title="Atualizar dados" role="button" tabindex="0">
+      <img src="refresh.png" alt="↻" class="refresh-img" id="refreshImg" onerror="this.style.display='none'; this.parentElement.innerHTML='↻';">
+    </div>
+  </div>
 
-<!-- Cabeçalho com título e botão de refresh -->
-<div class="header-container">
-  <div class="table-title">Acompanhamento Diário - Ibovespa</div>
-  <div id="refreshButton" class="refresh-btn" title="Atualizar dados" role="button" tabindex="0">
-    <img src="refresh.png" alt="↻" class="refresh-img" id="refreshImg" onerror="this.style.display='none'; this.parentElement.innerHTML='↻';">
+  <div class="table-wrapper">
+    <table class="hoje-table" id="tabelaHoje">
+      <thead>
+        <tr>
+          <th>Ação</th>
+          <th>Setor</th>
+          <th id="col-peso" class="sortable">Peso no<br>Ibov <span class="sort-icon" id="sort-icon-peso"></span></th>
+          <th id="col-variacao" class="sortable">Variação %<br>Hoje <span class="sort-icon" id="sort-icon-variacao"></span></th>
+          <th id="col-contribuicao" class="sortable">Contribuição<br>para Ibov <span class="sort-icon" id="sort-icon-contribuicao"></span></th>
+          <th>% da<br>contribuição</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaHojeBody"></tbody>
+    </table>
   </div>
 </div>
 
-<div class="table-wrapper">
-
-<table class="hoje-table" id="tabelaHoje">
-<thead>
-<tr>
-<th>Ação</th>
-<th>Setor</th>
-<th id="col-peso" class="sortable">Peso no<br>Ibov <span class="sort-icon" id="sort-icon-peso"></span></th>
-<th id="col-variacao" class="sortable">Variação %<br>Hoje <span class="sort-icon" id="sort-icon-variacao"></span></th>
-<th id="col-contribuicao" class="sortable">Contribuição<br>para Ibov <span class="sort-icon" id="sort-icon-contribuicao"></span></th>
-<th>% da<br>contribuição</th>
-</tr>
-</thead>
-
-<tbody id="tabelaHojeBody">
-<!-- preenchido via JS -->
-</tbody>
-</table>
-
-</div>
-</div>
-
 <script>
-const CSV_URL_PRINCIPAL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjEpwKbe5Q2Em0ZexDiCjBT1qUjr2SM2xCuROpQKnHr64XxUqaZ4p2eQurmL_4JTt45Wr-Ok5GRTdn/pub?output=csv";
-const CSV_URL_VAR = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwmjzKT5EHJS3McU2_42R-MI6uR4cdm04GeeQ9RBxhprOwSkl9xIx01rZvweCtl3quo2rBNNtNE2AB/pub?output=csv";
+const API_URL_HOJE = "https://us-central1-ibovespa-ae47d.cloudfunctions.net/api/hoje";
 
-// Estado global
-let dadosAcoes = []; // array de objetos com os dados das ações
-let variacaoIbovespaGlobal = NaN; // para usar no cálculo da % contribuição
-let ordenacao = {
-  coluna: null, // 'peso', 'variacao', 'contribuicao'
-  direcao: 'asc' // 'asc' ou 'desc'
-};
+let dadosAcoes = [];
+let ordenacao = { coluna: null, direcao: 'asc' };
 
-// Mapeamento de IDs das colunas para a chave no objeto
-const colunaParaChave = {
-  'col-peso': 'pesoNum',
-  'col-variacao': 'variacaoNum',
-  'col-contribuicao': 'contribuicaoNum'
-};
-
-// Elementos dos ícones de ordenação
 const iconPeso = document.getElementById('sort-icon-peso');
 const iconVariacao = document.getElementById('sort-icon-variacao');
 const iconContribuicao = document.getElementById('sort-icon-contribuicao');
 
-// Parser CSV simples que lida com campos entre aspas
-function parseCSV(texto) {
-  const linhas = [];
-  let linhaAtual = [];
-  let campo = '';
-  let dentroAspas = false;
-
-  for (let i = 0; i < texto.length; i++) {
-    let char = texto[i];
-    let proximo = texto[i + 1];
-
-    if (dentroAspas) {
-      if (char === '"' && proximo === '"') {
-        campo += '"';
-        i++;
-      } else if (char === '"') {
-        dentroAspas = false;
-      } else {
-        campo += char;
-      }
-    } else {
-      if (char === '"') {
-        dentroAspas = true;
-      } else if (char === ',') {
-        linhaAtual.push(campo);
-        campo = '';
-      } else if (char === '\n' || char === '\r') {
-        if (char === '\r' && proximo === '\n') i++;
-        linhaAtual.push(campo);
-        linhas.push(linhaAtual);
-        linhaAtual = [];
-        campo = '';
-      } else {
-        campo += char;
-      }
-    }
-  }
-
-  if (campo || linhaAtual.length > 0) {
-    linhaAtual.push(campo);
-    linhas.push(linhaAtual);
-  }
-
-  return linhas;
-}
-
-// Converte string com possível vírgula e % para número
-function extrairNumero(valor) {
-  if (!valor || valor.trim() === '') return NaN;
-  // Remove espaços, substitui vírgula por ponto, remove % se houver
-  let str = valor.trim().replace(/\s+/g, '');
-  str = str.replace(',', '.');
-  str = str.replace('%', '');
-  const num = parseFloat(str);
-  return isNaN(num) ? NaN : num;
-}
-
-function formatarPercentual(valor) {
-  if (valor === undefined || valor === null || valor === '') return '-';
-  let num;
-  if (typeof valor === 'number') {
-    num = valor;
-  } else {
-    num = extrairNumero(valor);
-  }
-  if (isNaN(num)) return '-';
-  return num.toFixed(2) + '%';
-}
-
-// Formatar número no estilo brasileiro: 1.234,56
-function formatarNumeroBR(num) {
-  if (isNaN(num)) return '-';
-  return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-// Atualiza os ícones de ordenação no cabeçalho
 function atualizarIconesOrdenacao() {
-  // Limpa todos os ícones
-  iconPeso.innerHTML = '';
-  iconVariacao.innerHTML = '';
-  iconContribuicao.innerHTML = '';
-
+  iconPeso.innerHTML = iconVariacao.innerHTML = iconContribuicao.innerHTML = '';
   if (ordenacao.coluna) {
     const seta = ordenacao.direcao === 'asc' ? '▲' : '▼';
-    if (ordenacao.coluna === 'peso') {
-      iconPeso.innerHTML = seta;
-    } else if (ordenacao.coluna === 'variacao') {
-      iconVariacao.innerHTML = seta;
-    } else if (ordenacao.coluna === 'contribuicao') {
-      iconContribuicao.innerHTML = seta;
-    }
+    if (ordenacao.coluna === 'peso') iconPeso.innerHTML = seta;
+    else if (ordenacao.coluna === 'variacao') iconVariacao.innerHTML = seta;
+    else if (ordenacao.coluna === 'contribuicao') iconContribuicao.innerHTML = seta;
   }
 }
 
-// Função de ordenação
 function ordenarDados() {
-  if (!ordenacao.coluna) return; // mantém ordem original (como veio)
-
+  if (!ordenacao.coluna) return;
   const chave = ordenacao.coluna === 'peso' ? 'pesoNum' :
                 ordenacao.coluna === 'variacao' ? 'variacaoNum' : 'contribuicaoNum';
-
   dadosAcoes.sort((a, b) => {
-    let valA = a[chave];
-    let valB = b[chave];
-
-    // Tratar NaN: colocar no final
+    let valA = a[chave], valB = b[chave];
     if (isNaN(valA) && isNaN(valB)) return 0;
-    if (isNaN(valA)) return 1;  // a depois
-    if (isNaN(valB)) return -1; // b depois
-
-    if (ordenacao.direcao === 'asc') {
-      return valA - valB;
-    } else {
-      return valB - valA;
-    }
+    if (isNaN(valA)) return 1;
+    if (isNaN(valB)) return -1;
+    return ordenacao.direcao === 'asc' ? valA - valB : valB - valA;
   });
 }
 
-// Renderiza a tabela com os dados ordenados
 function renderizarTabela() {
   const tbody = document.getElementById("tabelaHojeBody");
   tbody.innerHTML = '';
-
   if (dadosAcoes.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6">Nenhum dado disponível</td></tr>';
     return;
   }
-
   for (const item of dadosAcoes) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+    tbody.innerHTML += `<tr>
       <td>${item.acao}</td>
       <td>${item.setor}</td>
       <td>${item.pesoFormatado}</td>
       <td>${item.variacaoFormatada}</td>
       <td>${item.contribuicaoFormatada}</td>
       <td>${item.pctContribuicaoFormatada}</td>
-    `;
-    tbody.appendChild(tr);
+    </tr>`;
   }
-
   atualizarIconesOrdenacao();
 }
 
-// Função principal de carregamento (agora pode ser chamada novamente)
 async function carregarDados() {
   const tbody = document.getElementById("tabelaHojeBody");
   const ibovespaBox = document.getElementById("ibovespaBox");
-  
-  // Mostra indicador de carregamento
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>';
   ibovespaBox.innerHTML = '<div>Carregando...</div>';
 
   try {
-    // Carregar ambas as planilhas em paralelo
-    const [respostaPrincipal, respostaVar] = await Promise.all([
-      fetch(CSV_URL_PRINCIPAL),
-      fetch(CSV_URL_VAR)
-    ]);
+    const response = await fetch(API_URL_HOJE);
+    if (!response.ok) throw new Error(`Erro ${response.status}`);
+    const data = await response.json();
 
-    const csvPrincipal = await respostaPrincipal.text();
-    const csvVar = await respostaVar.text();
-
-    const csvPrincipalLimpo = csvPrincipal.replace(/^\uFEFF/, '');
-    const csvVarLimpo = csvVar.replace(/^\uFEFF/, '');
-
-    const linhasPrincipal = parseCSV(csvPrincipalLimpo);
-    const linhasVar = parseCSV(csvVarLimpo);
-
-    if (linhasPrincipal.length < 2) {
-      tbody.innerHTML = '<tr><td colspan="6">Arquivo principal com poucas linhas</td></tr>';
-      return;
-    }
-
-    // --- Extrair valor do Ibovespa (linha 198, coluna 1) e calcular variação ---
-    let valorIbovespa = NaN;
-    variacaoIbovespaGlobal = NaN;
-
-    if (linhasVar.length > 199) {
-      const rawValor198 = linhasVar[198] && linhasVar[198].length > 1 ? linhasVar[198][1] : null;
-      const rawValor199 = linhasVar[199] && linhasVar[199].length > 1 ? linhasVar[199][1] : null;
-      
-      valorIbovespa = extrairNumero(rawValor198);
-      const valor199 = extrairNumero(rawValor199);
-      
-      if (!isNaN(valorIbovespa) && !isNaN(valor199) && valor199 !== 0) {
-        variacaoIbovespaGlobal = (valorIbovespa / valor199 - 1) * 100;
-      }
-    }
-
-    // --- Extrair data/hora de atualização (linha 197, coluna 0) ---
-    let dataAtualizacao = '';
-    if (linhasVar.length > 197 && linhasVar[197] && linhasVar[197].length > 0) {
-      dataAtualizacao = linhasVar[197][0] ? linhasVar[197][0].trim() : '';
-    }
-
-    // Atualizar quadro
     ibovespaBox.innerHTML = `
-      <div>Ibovespa Hoje: <span>${formatarNumeroBR(valorIbovespa)}</span></div>
-      <div>Variação: <span>${formatarPercentual(variacaoIbovespaGlobal)}</span></div>
-      <div>Atualizado em: <span>${dataAtualizacao || 'indisponível'}</span></div>
+      <div>Ibovespa Hoje: <span>${data.valorIbovespaFormatado || '-'}</span></div>
+      <div>Variação: <span>${data.variacaoIbovespaFormatada || '-'}</span></div>
+      <div>Atualizado em: <span>${data.dataAtualizacao || 'indisponível'}</span></div>
     `;
 
-    // --- Mapa ação -> setor (colunas 138..268, linhas 0 e 1) ---
-    const acaoParaSetor = {};
-    const linhaSetor = linhasPrincipal[0];
-    const linhaCodigo = linhasPrincipal[1];
-
-    for (let col = 138; col <= 268; col++) {
-      if (linhaCodigo.length > col && linhaSetor.length > col) {
-        const codigo = linhaCodigo[col] ? linhaCodigo[col].trim() : '';
-        const setor = linhaSetor[col] ? linhaSetor[col].trim() : '';
-        if (codigo !== '' && setor !== '') {
-          acaoParaSetor[codigo] = setor;
-        }
-      }
-    }
-
-    // --- Mapa ação -> variação (segunda planilha) ---
-    const acaoParaVariacao = {};
-    for (let i = 1; i < linhasVar.length; i++) {
-      const linha = linhasVar[i];
-      if (linha.length >= 2) {
-        const acao = linha[0] ? linha[0].trim() : '';
-        const variacao = linha[1] ? linha[1].trim() : '';
-        if (acao !== '' && variacao !== '') {
-          acaoParaVariacao[acao] = variacao;
-        }
-      }
-    }
-
-    // --- Construir array de objetos dadosAcoes ---
-    dadosAcoes = []; // reset
-
-    for (let i = 0; i < linhasPrincipal.length; i++) {
-      const linha = linhasPrincipal[i];
-      if (linha.length > 300) {
-        const acao = linha[300] ? linha[300].trim() : '';
-        if (acao !== '') {
-          const setor = acaoParaSetor[acao] || '-';
-          
-          const pesoRaw = (linha.length > 301 && linha[301]) ? linha[301] : '';
-          const pesoNum = extrairNumero(pesoRaw);
-          const pesoFormatado = formatarPercentual(pesoNum);
-          
-          const variacaoRaw = acaoParaVariacao[acao] || '';
-          const variacaoNum = extrairNumero(variacaoRaw);
-          const variacaoFormatada = formatarPercentual(variacaoNum);
-
-          let contribuicaoNum = NaN;
-          if (!isNaN(pesoNum) && !isNaN(variacaoNum)) {
-            contribuicaoNum = (pesoNum * variacaoNum) / 100;
-          }
-          const contribuicaoFormatada = formatarPercentual(contribuicaoNum);
-
-          let pctContribuicaoNum = NaN;
-          if (!isNaN(contribuicaoNum) && !isNaN(variacaoIbovespaGlobal) && variacaoIbovespaGlobal !== 0) {
-            pctContribuicaoNum = (contribuicaoNum / variacaoIbovespaGlobal) * 100;
-          }
-          const pctContribuicaoFormatada = formatarPercentual(pctContribuicaoNum);
-
-          dadosAcoes.push({
-            acao,
-            setor,
-            pesoNum,
-            pesoFormatado,
-            variacaoNum,
-            variacaoFormatada,
-            contribuicaoNum,
-            contribuicaoFormatada,
-            pctContribuicaoNum,
-            pctContribuicaoFormatada
-          });
-        }
-      }
-    }
-
-    // Aplicar ordenação ativa (se houver) nos novos dados
-    if (ordenacao.coluna) {
-      ordenarDados();
-    }
-
-    // Renderizar
+    dadosAcoes = data.acoes || [];
+    if (ordenacao.coluna) ordenarDados();
     renderizarTabela();
-
-    if (dadosAcoes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">Nenhuma ação encontrada na coluna 300</td></tr>';
-    }
-
   } catch (erro) {
-    console.error("Erro ao carregar dados:", erro);
-    tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Erro ao carregar dados. Verifique o console.</td></tr>';
+    console.error(erro);
+    tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Erro ao carregar dados</td></tr>';
     ibovespaBox.innerHTML = '<div>Erro ao carregar dados</div>';
   }
 }
 
-// Manipulador de clique nos cabeçalhos ordenáveis
 function configurarOrdenacao() {
   document.getElementById('col-peso').addEventListener('click', () => {
-    if (ordenacao.coluna === 'peso') {
-      // inverte direção
-      ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
-    } else {
-      ordenacao.coluna = 'peso';
-      ordenacao.direcao = 'asc';
-    }
-    ordenarDados();
-    renderizarTabela();
+    ordenacao = { coluna: 'peso', direcao: ordenacao.coluna === 'peso' ? (ordenacao.direcao === 'asc' ? 'desc' : 'asc') : 'asc' };
+    ordenarDados(); renderizarTabela();
   });
-
   document.getElementById('col-variacao').addEventListener('click', () => {
-    if (ordenacao.coluna === 'variacao') {
-      ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
-    } else {
-      ordenacao.coluna = 'variacao';
-      ordenacao.direcao = 'asc';
-    }
-    ordenarDados();
-    renderizarTabela();
+    ordenacao = { coluna: 'variacao', direcao: ordenacao.coluna === 'variacao' ? (ordenacao.direcao === 'asc' ? 'desc' : 'asc') : 'asc' };
+    ordenarDados(); renderizarTabela();
   });
-
   document.getElementById('col-contribuicao').addEventListener('click', () => {
-    if (ordenacao.coluna === 'contribuicao') {
-      ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
-    } else {
-      ordenacao.coluna = 'contribuicao';
-      ordenacao.direcao = 'asc';
-    }
-    ordenarDados();
-    renderizarTabela();
+    ordenacao = { coluna: 'contribuicao', direcao: ordenacao.coluna === 'contribuicao' ? (ordenacao.direcao === 'asc' ? 'desc' : 'asc') : 'asc' };
+    ordenarDados(); renderizarTabela();
   });
 }
 
-// Adiciona evento de clique ao botão de refresh
 document.addEventListener('DOMContentLoaded', () => {
-  const refreshBtn = document.getElementById('refreshButton');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => {
-      // Mantém a ordenação atual (será reaplicada após carregar)
-      carregarDados();
-    });
-  }
-  // Configurar ordenação
+  document.getElementById('refreshButton').addEventListener('click', carregarDados);
   configurarOrdenacao();
-  // Carrega os dados pela primeira vez
   carregarDados();
 });
 </script>
