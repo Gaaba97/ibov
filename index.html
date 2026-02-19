@@ -657,37 +657,37 @@
         // Atualiza gráfico
         atualizarGrafico(dados.chartData);
 
-        // --- INÍCIO DA MODIFICAÇÃO: ordenação condicional das tabelas 2 e 3 ---
-        // Calcula a variação do Ibovespa no período
-        let variacaoIbov = 0;
-        if (dados.chartData && dados.chartData.length >= 2) {
-          const primeiro = dados.chartData[0].y;
-          const ultimo = dados.chartData[dados.chartData.length - 1].y;
-          variacaoIbov = ultimo - primeiro;
-        }
+       // --- ORDENAÇÃO CONDICIONAL DAS TABELAS 2 E 3 ---
+// Calcula a variação do Ibovespa no período
+let variacaoIbov = 0;
+if (dados.chartData && dados.chartData.length >= 2) {
+    const primeiro = dados.chartData[0].y;
+    const ultimo = dados.chartData[dados.chartData.length - 1].y;
+    variacaoIbov = ultimo - primeiro;
+    console.log('Variação do Ibovespa no período:', variacaoIbov);
+}
 
-        // Prepara as tabelas (clonando para não modificar o original)
-        let tabela1 = dados.tabela1 || [];
-        let tabela2 = dados.tabela2 || [];
-        let tabela3 = dados.tabela3 || [];
+// Prepara as tabelas (cópia para não modificar o original)
+let tabela1 = dados.tabela1 || [];
+let tabela2 = dados.tabela2 || [];
+let tabela3 = dados.tabela3 || [];
 
-        // Se a variação for negativa, ordena as tabelas 2 e 3 pela contribuição em ordem crescente (mais negativa primeiro)
-        if (variacaoIbov < 0) {
-          // Ordenação crescente (do menor para o maior)
-          tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
-          tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
-        }
-        // Caso contrário, mantém a ordem original (que presumimos ser decrescente, mas garantimos ordenação decrescente explícita se necessário)
-        // Se quiser garantir a ordem decrescente mesmo quando a variação for >=0, pode descomentar as linhas abaixo:
-        // else {
-        //   tabela2 = [...tabela2].sort((a, b) => b.contribuicao - a.contribuicao);
-        //   tabela3 = [...tabela3].sort((a, b) => b.contribuicao - a.contribuicao);
-        // }
+// Se a variação for negativa, ordena as tabelas 2 e 3 pela contribuição em ordem crescente (mais negativa primeiro)
+if (variacaoIbov < 0) {
+    console.log('Variação negativa: ordenando de forma crescente (menor contribuição primeiro)');
+    tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
+    tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
+} else {
+    // Opcional: se quiser garantir ordem decrescente quando a variação for zero ou positiva
+    // Descomente as linhas abaixo:
+    // tabela2 = [...tabela2].sort((a, b) => b.contribuicao - a.contribuicao);
+    // tabela3 = [...tabela3].sort((a, b) => b.contribuicao - a.contribuicao);
+}
 
-        // Atualiza as tabelas com os dados (possivelmente reordenados)
-        preencherTabela1(tabela1);
-        preencherTabela2(tabela2);
-        preencherTabela3(tabela3);
+// Atualiza as tabelas
+preencherTabela1(tabela1);
+preencherTabela2(tabela2);
+preencherTabela3(tabela3);
         // --- FIM DA MODIFICAÇÃO ---
 
         loadingEl.style.display = 'none';
