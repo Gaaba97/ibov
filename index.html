@@ -397,34 +397,28 @@
       flex-direction: column;
     }
 
-    @media (max-width: 1300px) {
-      .tables-wrapper {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      
-      .table-section {
-        width: 48%;
-        margin-bottom: 20px;
-      }
+    /* --- NOVAS REGRAS PARA DISPOSITIVOS TOUCH --- */
+    .touch-device .tables-wrapper {
+      flex-wrap: wrap;
+      justify-content: center;
     }
-    
-    @media (max-width: 900px) {
-      .table-section {
-        width: 100%;
-      }
-      
-      .period-controls {
-        flex-direction: column;
-      }
-      
-      .custom-range-container {
-        margin-left: 0;
-        margin-top: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-      }
+
+    .touch-device .table-section {
+      width: 100%;
+      margin-bottom: 20px;
     }
+
+    .touch-device .period-controls {
+      flex-direction: column;
+    }
+
+    .touch-device .custom-range-container {
+      margin-left: 0;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    /* ------------------------------------------- */
   </style>
 </head>
 <body>
@@ -546,6 +540,14 @@
 
   <!-- Script principal da aplicação (agora com a lógica de ordenação condicional) -->
   <script>
+    // --- DETECÇÃO DE DISPOSITIVO TOUCH ---
+    (function() {
+      const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      if (isTouchDevice) {
+        document.body.classList.add('touch-device');
+      }
+    })();
+
     // Configuração
     const API_URL = "https://us-central1-ibovespa-ae47d.cloudfunctions.net/api/dados";
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
