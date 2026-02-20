@@ -146,6 +146,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      margin-left: 20px;
       padding: 8px 12px;
       background-color: #f9f9f9;
       border-radius: 4px;
@@ -404,6 +405,11 @@
       flex-direction: column;
     }
 
+    /* Separador "ou" - escondido por padrão */
+    .period-separator {
+      display: none;
+    }
+
     /* --- REGRAS PARA DISPOSITIVOS TOUCH --- */
     .touch-device {
       font-size: 18px;
@@ -430,17 +436,20 @@
       padding: 10px 18px;
     }
 
-    /* Separador "ou" delicado */
+    /* Separador "ou" - aparece apenas em touch */
     .touch-device .period-separator {
-      font-size: 17px;
+      display: block;
+      font-size: 14px;
       color: #666;
       margin: 5px 0;
+      font-style: italic;
       font-weight: 300;
       letter-spacing: 0.5px;
     }
 
     /* Seletor de data personalizado: largura automática, centralizado */
     .touch-device .custom-range-container {
+      margin-left: 0; /* remove o margin-left padrão */
       width: auto;
       justify-content: center;
       background-color: #f0f0f0;
@@ -448,7 +457,6 @@
       padding: 10px 15px;
       flex-wrap: nowrap;
       gap: 8px;
-      margin: 0 auto;
     }
 
     .touch-device .custom-range-container label {
@@ -529,7 +537,7 @@
           <button class="period-btn" data-period="all">Todo Período</button>
         </div>
         
-        <!-- Separador "ou" (visível apenas em touch) -->
+        <!-- Separador "ou" (aparece apenas em touch) -->
         <div class="period-separator">ou</div>
         
         <div class="custom-range-container">
