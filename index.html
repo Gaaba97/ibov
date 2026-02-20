@@ -397,7 +397,7 @@
       flex-direction: column;
     }
 
-    /* --- NOVAS REGRAS PARA DISPOSITIVOS TOUCH --- */
+    /* --- REGRAS PARA DISPOSITIVOS TOUCH (adaptado) --- */
     .touch-device .tables-wrapper {
       flex-wrap: wrap;
       justify-content: center;
@@ -408,17 +408,28 @@
       margin-bottom: 20px;
     }
 
+    /* Botões de período: em linha com rolagem horizontal se necessário */
     .touch-device .period-controls {
-      flex-direction: column;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 10px; /* espaço para a barra de rolagem */
     }
 
+    .touch-device .period-btn {
+      flex-shrink: 0; /* impede que os botões encolham */
+    }
+
+    /* Seletor de data personalizado: abaixo dos botões e centralizado */
     .touch-device .custom-range-container {
       margin-left: 0;
       margin-top: 10px;
       flex-wrap: wrap;
       justify-content: center;
+      width: 100%;
     }
-    /* ------------------------------------------- */
+    /* ------------------------------------------------ */
   </style>
 </head>
 <body>
