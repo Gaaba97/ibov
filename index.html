@@ -15,7 +15,7 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* ----- NOVA NAVBAR PRETA (links à direita) ----- */
+    /* ----- NAVBAR PRETA (links à direita) ----- */
     .navbar {
       background-color: #000;
       padding: 12px 20px;
@@ -35,9 +35,8 @@
     .navbar a:hover {
       opacity: 0.8;
     }
-    /* ----- FIM DA NAVBAR NOVA ----- */
 
-    /* ESTILOS – mantidos exatamente iguais ao original */
+    /* ESTILOS GLOBAIS */
     html, body {
       margin: 0;
       padding: 0;
@@ -397,7 +396,7 @@
       flex-direction: column;
     }
 
-    /* --- REGRAS PARA DISPOSITIVOS TOUCH (adaptado) --- */
+    /* --- REGRAS PARA DISPOSITIVOS TOUCH --- */
     .touch-device {
       font-size: 18px;
     }
@@ -406,16 +405,59 @@
       font-size: 18px;
     }
 
-    /* Remove o botão "3 Meses" em touch */
+    /* Oculta o botão "3 Meses" */
     .touch-device .period-btn[data-period="3m"] {
       display: none;
     }
 
+    /* Botões de período: linha única com rolagem */
+    .touch-device .period-controls {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 10px;
+    }
+
     .touch-device .period-btn {
+      flex-shrink: 0;
       font-size: 16px;
       padding: 10px 18px;
     }
 
+    /* Seletor de data personalizado: agora na linha de baixo, com estilo de botão */
+    .touch-device .custom-range-container {
+      margin-left: 0;
+      margin-top: 15px;
+      width: 100%;
+      justify-content: center;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      flex-wrap: nowrap; /* impede quebra de linha interna */
+      gap: 8px;
+    }
+
+    .touch-device .custom-range-container label {
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    .touch-device .date-input {
+      font-size: 16px;
+      width: auto; /* permite que o input se ajuste */
+      min-width: 110px; /* largura mínima para evitar quebra */
+      padding: 8px 10px;
+      white-space: nowrap;
+    }
+
+    .touch-device .apply-btn {
+      font-size: 16px;
+      padding: 8px 16px;
+      white-space: nowrap;
+    }
+
+    /* Ajuste nas tabelas */
     .touch-device .contributions-table {
       font-size: 15px;
     }
@@ -437,47 +479,6 @@
       font-size: 16px;
     }
 
-    /* Botões de período: em linha com rolagem horizontal */
-    .touch-device .period-controls {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      justify-content: flex-start;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 10px;
-    }
-
-    .touch-device .period-btn {
-      flex-shrink: 0;
-    }
-
-    /* Seletor de data personalizado: mesmo estilo dos botões */
-    .touch-device .custom-range-container {
-      margin-left: 0;
-      background-color: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 10px 18px; /* mesmo padding dos botões */
-      gap: 12px;
-      flex-shrink: 0; /* não encolhe */
-    }
-
-    .touch-device .custom-range-container label {
-      font-size: 16px;
-      color: #333;
-    }
-
-    .touch-device .date-input {
-      font-size: 16px;
-      padding: 8px 12px;
-      width: 130px; /* um pouco maior para caber melhor */
-      border: 1px solid #ccc;
-    }
-
-    .touch-device .apply-btn {
-      font-size: 16px;
-      padding: 8px 16px;
-    }
-
     .touch-device .tables-wrapper {
       flex-wrap: wrap;
       justify-content: center;
@@ -487,11 +488,10 @@
       width: 100%;
       margin-bottom: 20px;
     }
-    /* ------------------------------------------------ */
+    /* ---------------------------------------- */
   </style>
 </head>
 <body>
-  <!-- NOVA NAVBAR PRETA (links à direita) -->
   <nav class="navbar">
     <a href="index.html">Histórico</a>
     <a href="hoje.html">Hoje</a>
@@ -607,7 +607,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
-  <!-- Script principal da aplicação (agora com a lógica de ordenação condicional) -->
+  <!-- Script principal -->
   <script>
     // --- DETECÇÃO DE DISPOSITIVO TOUCH ---
     (function() {
@@ -622,12 +622,10 @@
     const MIN_ALLOWED_DATE = new Date(2024, 11, 29);
 
     let ibovespaChart = null;
-    let chartDataCache = []; // usado para o tooltip
+    let chartDataCache = [];
 
-    // Elementos do DOM
     const subtitleEl = document.getElementById('subtitle');
     const loadingEl = document.getElementById('loadingIndicator');
-    const periodControls = document.getElementById('periodControls');
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
     const startDateError = document.getElementById('startDateError');
@@ -635,7 +633,6 @@
     const applyBtn = document.getElementById('applyCustomRange');
     const periodBtns = document.querySelectorAll('.period-btn');
 
-    // Tooltip customizado
     let customTooltip = null;
 
     function createCustomTooltip() {
@@ -712,7 +709,6 @@
       tooltipEl.className = 'custom-tooltip top visible';
     }
 
-    // Função principal: carrega dados da API
     async function carregarDados(params = { periodo: '1m' }) {
       try {
         loadingEl.style.display = 'block';
@@ -732,44 +728,29 @@
 
         const dados = await response.json();
 
-        // Atualiza subtítulo
         subtitleEl.textContent = `Última atualização: ${dados.ultimaData} - Ibovespa: ${dados.ultimoValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} pontos`;
 
-        // Atualiza gráfico
         atualizarGrafico(dados.chartData);
 
-       // --- ORDENAÇÃO CONDICIONAL DAS TABELAS 2 E 3 ---
-// Calcula a variação do Ibovespa no período
-let variacaoIbov = 0;
-if (dados.chartData && dados.chartData.length >= 2) {
-    const primeiro = dados.chartData[0].y;
-    const ultimo = dados.chartData[dados.chartData.length - 1].y;
-    variacaoIbov = ultimo - primeiro;
-    console.log('Variação do Ibovespa no período:', variacaoIbov);
-}
+        let variacaoIbov = 0;
+        if (dados.chartData && dados.chartData.length >= 2) {
+          const primeiro = dados.chartData[0].y;
+          const ultimo = dados.chartData[dados.chartData.length - 1].y;
+          variacaoIbov = ultimo - primeiro;
+        }
 
-// Prepara as tabelas (cópia para não modificar o original)
-let tabela1 = dados.tabela1 || [];
-let tabela2 = dados.tabela2 || [];
-let tabela3 = dados.tabela3 || [];
+        let tabela1 = dados.tabela1 || [];
+        let tabela2 = dados.tabela2 || [];
+        let tabela3 = dados.tabela3 || [];
 
-// Se a variação for negativa, ordena as tabelas 2 e 3 pela contribuição em ordem crescente (mais negativa primeiro)
-if (variacaoIbov < 0) {
-    console.log('Variação negativa: ordenando de forma crescente (menor contribuição primeiro)');
-    tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
-    tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
-} else {
-    // Opcional: se quiser garantir ordem decrescente quando a variação for zero ou positiva
-    // Descomente as linhas abaixo:
-    // tabela2 = [...tabela2].sort((a, b) => b.contribuicao - a.contribuicao);
-    // tabela3 = [...tabela3].sort((a, b) => b.contribuicao - a.contribuicao);
-}
+        if (variacaoIbov < 0) {
+          tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
+          tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
+        }
 
-// Atualiza as tabelas
-preencherTabela1(tabela1);
-preencherTabela2(tabela2);
-preencherTabela3(tabela3);
-        // --- FIM DA MODIFICAÇÃO ---
+        preencherTabela1(tabela1);
+        preencherTabela2(tabela2);
+        preencherTabela3(tabela3);
 
         loadingEl.style.display = 'none';
       } catch (error) {
@@ -779,9 +760,8 @@ preencherTabela3(tabela3);
       }
     }
 
-    // Funções de renderização (inalteradas)
     function atualizarGrafico(chartData) {
-      chartDataCache = chartData; // guarda para o tooltip
+      chartDataCache = chartData;
 
       if (!ibovespaChart) {
         const ctx = document.getElementById('ibovespaChart').getContext('2d');
@@ -943,7 +923,6 @@ preencherTabela3(tabela3);
       document.getElementById('tableTitle3').style.display = 'block';
     }
 
-    // Configuração dos inputs de data (validação e valores iniciais)
     function setupDateInputs() {
       const hoje = new Date();
       const umMesAtras = new Date(hoje);
@@ -992,7 +971,6 @@ preencherTabela3(tabela3);
       });
     }
 
-    // Botões de período
     function setupPeriodButtons() {
       periodBtns.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -1004,7 +982,6 @@ preencherTabela3(tabela3);
       });
     }
 
-    // Botão de intervalo customizado
     function setupCustomRangeButton() {
       applyBtn.addEventListener('click', function() {
         const start = new Date(startDateInput.value);
@@ -1030,13 +1007,12 @@ preencherTabela3(tabela3);
       });
     }
 
-    // Inicialização
     function init() {
       setupDateInputs();
       setupDateValidation();
       setupPeriodButtons();
       setupCustomRangeButton();
-      carregarDados({ periodo: '1m' }); // carrega padrão
+      carregarDados({ periodo: '1m' });
       window.addEventListener('resize', () => {
         if (ibovespaChart) ibovespaChart.resize();
       });
