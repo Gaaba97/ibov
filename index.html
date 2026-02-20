@@ -399,77 +399,82 @@
 
     /* --- REGRAS PARA DISPOSITIVOS TOUCH (adaptado) --- */
     .touch-device {
-      /* Aumento base de fonte */
       font-size: 18px;
     }
 
     .touch-device .navbar {
-      font-size: 18px; /* antes 16px */
+      font-size: 18px;
+    }
+
+    /* Remove o botão "3 Meses" em touch */
+    .touch-device .period-btn[data-period="3m"] {
+      display: none;
     }
 
     .touch-device .period-btn {
-      font-size: 16px; /* antes 14px */
-      padding: 10px 18px; /* um pouco maior */
+      font-size: 16px;
+      padding: 10px 18px;
     }
 
     .touch-device .contributions-table {
-      font-size: 15px; /* antes 13px */
+      font-size: 15px;
     }
 
     .touch-device .contributions-table th,
     .touch-device .contributions-table td {
-      padding: 14px 10px; /* aumentar padding */
+      padding: 14px 10px;
     }
 
     .touch-device .table-title {
-      font-size: 18px; /* antes 16px */
+      font-size: 18px;
     }
 
     .touch-device .header-info h1 {
-      font-size: 28px; /* um pouco maior */
+      font-size: 28px;
     }
 
     .touch-device .subtitle {
-      font-size: 16px; /* antes 14px */
+      font-size: 16px;
     }
 
-    /* Botões de período: em linha com rolagem horizontal se necessário */
+    /* Botões de período: em linha com rolagem horizontal */
     .touch-device .period-controls {
       flex-wrap: nowrap;
       overflow-x: auto;
       justify-content: flex-start;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 10px; /* espaço para a barra de rolagem */
+      padding-bottom: 10px;
     }
 
     .touch-device .period-btn {
-      flex-shrink: 0; /* impede que os botões encolham */
+      flex-shrink: 0;
     }
 
-    /* Seletor de data personalizado: abaixo dos botões, mas com estilo integrado */
+    /* Seletor de data personalizado: mesmo estilo dos botões */
     .touch-device .custom-range-container {
       margin-left: 0;
-      margin-top: 15px;
-      width: auto;
-      max-width: 100%;
-      justify-content: center;
-      background-color: #f0f0f0; /* destacar */
-      border: 1px solid #ccc;
-      padding: 10px 15px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px 18px; /* mesmo padding dos botões */
+      gap: 12px;
+      flex-shrink: 0; /* não encolhe */
     }
 
     .touch-device .custom-range-container label {
-      font-size: 16px; /* antes 14px */
+      font-size: 16px;
+      color: #333;
     }
 
     .touch-device .date-input {
-      font-size: 16px; /* antes 14px */
-      width: 140px; /* um pouco maior */
+      font-size: 16px;
       padding: 8px 12px;
+      width: 130px; /* um pouco maior para caber melhor */
+      border: 1px solid #ccc;
     }
 
     .touch-device .apply-btn {
-      font-size: 16px; /* antes 14px */
+      font-size: 16px;
       padding: 8px 16px;
     }
 
