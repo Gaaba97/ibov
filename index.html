@@ -106,8 +106,10 @@
 
     .period-controls {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 15px;
       margin-top: 20px;
       width: 100%;
@@ -419,7 +421,13 @@
       font-size: 18px;
     }
 
-    /* Botões de período: centralizados, com rolagem se necessário */
+    /* Em touch, o container de controles vira coluna */
+    .touch-device .period-controls {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Botões de período: linha única com rolagem */
     .touch-device .period-buttons {
       flex-wrap: nowrap;
       overflow-x: auto;
@@ -436,20 +444,20 @@
       padding: 10px 18px;
     }
 
-    /* Separador "ou" - aparece apenas em touch */
+    /* Separador "ou" - aparece apenas em touch, sem itálico, fonte 17px */
     .touch-device .period-separator {
       display: block;
-      font-size: 14px;
+      font-size: 17px;
       color: #666;
       margin: 5px 0;
-      font-style: italic;
+      font-style: normal;
       font-weight: 300;
       letter-spacing: 0.5px;
     }
 
-    /* Seletor de data personalizado: largura automática, centralizado */
+    /* Seletor de data personalizado: sem margem esquerda, largura automática, centralizado */
     .touch-device .custom-range-container {
-      margin-left: 0; /* remove o margin-left padrão */
+      margin-left: 0;
       width: auto;
       justify-content: center;
       background-color: #f0f0f0;
