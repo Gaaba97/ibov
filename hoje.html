@@ -16,32 +16,279 @@
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-/* (mesmo estilo do original, sem alterações) */
-html, body { margin:0; padding:0; background-color:#fff; font-family:"DM Sans", sans-serif; height:100%; }
-.navbar { background-color:#000; padding:12px 20px; display:flex; justify-content:flex-end; gap:30px; font-family:"Montserrat", sans-serif; }
-.navbar a { color:#fff; text-decoration:none; }
-.container { width:95%; max-width:1400px; margin:30px auto; }
-.ibovespa-box { border:1px solid #000; padding:15px 20px; margin-bottom:25px; margin-left:auto; margin-right:auto; max-width:400px; font-family:"Montserrat", sans-serif; background-color:#f9f9f9; border-radius:4px; text-align:center; }
-.ibovespa-box div { margin:5px 0; }
-.ibovespa-box span { font-weight:700; color:#164CAD; }
-.header-container { display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px; }
-.header-container .table-title { font-family:"Montserrat", sans-serif; font-size:18px; color:#1E4DB7; margin:0; flex:1; text-align:center; }
-.refresh-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background-color:#164CAD; color:white; font-size:20px; cursor:pointer; transition:background-color 0.2s; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.2); }
-.refresh-btn:hover { background-color:#0d3a8c; }
-.refresh-btn:active { transform:scale(0.95); }
-.refresh-img { width:28px; height:auto; cursor:pointer; transition:opacity 0.2s; }
-.refresh-img:hover { opacity:0.7; }
-.refresh-img:active { transform:scale(0.95); }
-.table-wrapper { overflow-x:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); position:relative; }
-.hoje-table { width:100%; border-collapse:collapse; font-family:"Montserrat"; font-size:13px; }
-.hoje-table th { background-color:#164CAD; color:white; padding:12px 8px; text-align:center; position:relative; cursor:pointer; user-select:none; }
-.hoje-table th.sortable:hover { background-color:#1e5bbf; }
-.hoje-table th .sort-icon { margin-left:5px; font-size:14px; }
-.hoje-table td { padding:10px 8px; border-bottom:1px solid #e0e0e0; text-align:center; }
-.hoje-table tbody tr:nth-child(even) { background-color:#f9f9f9; }
+  /* ----- ESTILOS GLOBAIS (base do index + específicos hoje) ----- */
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+    font-family: "DM Sans", sans-serif;
+    height: 100%;
+  }
+
+  /* ----- NAVBAR PRETA (idêntica ao index) ----- */
+  .navbar {
+    background-color: #000;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 30px;
+    font-family: "Montserrat", sans-serif;
+    font-size: 16px;
+  }
+  .navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s ease;
+  }
+  .navbar a:hover {
+    opacity: 0.8;
+  }
+
+  /* ----- CONTEÚDO PRINCIPAL (hoje.html) ----- */
+  .container {
+    width: 95%;
+    max-width: 1400px;
+    margin: 30px auto;
+  }
+
+  .ibovespa-box {
+    border: 1px solid #000;
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 400px;
+    font-family: "Montserrat", sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .ibovespa-box div {
+    margin: 5px 0;
+  }
+  .ibovespa-box span {
+    font-weight: 700;
+    color: #164CAD;
+  }
+
+  .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .header-container .table-title {
+    font-family: "Montserrat", sans-serif;
+    font-size: 18px;
+    color: #1E4DB7;
+    margin: 0;
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Botão de atualização */
+  .refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #164CAD;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  .refresh-btn:hover {
+    background-color: #0d3a8c;
+  }
+  .refresh-btn:active {
+    transform: scale(0.95);
+  }
+  .refresh-img {
+    width: 28px;
+    height: auto;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .refresh-img:hover {
+    opacity: 0.7;
+  }
+  .refresh-img:active {
+    transform: scale(0.95);
+  }
+
+  /* Tabela */
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+  }
+  .hoje-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Montserrat";
+    font-size: 13px;
+  }
+  .hoje-table th {
+    background-color: #164CAD;
+    color: white;
+    padding: 12px 8px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+  }
+  .hoje-table th.sortable:hover {
+    background-color: #1e5bbf;
+  }
+  .hoje-table th .sort-icon {
+    margin-left: 5px;
+    font-size: 14px;
+  }
+  .hoje-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+  }
+  .hoje-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  /* ----- REGRAS PARA DISPOSITIVOS TOUCH (copiadas do index + adaptações para hoje) ----- */
+  .touch-device {
+    font-size: 18px;
+  }
+
+  .touch-device .navbar {
+    font-size: 18px;
+  }
+
+  /* Ajustes para a tabela no touch */
+  .touch-device .hoje-table {
+    font-size: 15px;
+  }
+  .touch-device .hoje-table th,
+  .touch-device .hoje-table td {
+    padding: 14px 10px;
+  }
+  .touch-device .hoje-table th {
+    padding: 16px 12px; /* cabeçalho com área de toque maior */
+  }
+
+  /* Caixa do Ibovespa */
+  .touch-device .ibovespa-box {
+    font-size: 16px;
+    padding: 18px 22px;
+  }
+
+  /* Botão de atualização maior */
+  .touch-device .refresh-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+  .touch-device .refresh-img {
+    width: 36px;
+  }
+
+  /* Título da tabela */
+  .touch-device .header-container .table-title {
+    font-size: 20px;
+  }
+
+  /* As regras abaixo (do index) não prejudicam hoje, mas garantem consistência */
+  .touch-device .period-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+  .touch-device .period-buttons {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: center;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+    width: 100%;
+    scrollbar-width: thin;
+  }
+  .touch-device .period-btn {
+    flex-shrink: 0;
+    font-size: 16px;
+    padding: 10px 18px;
+  }
+  .touch-device .period-separator {
+    display: block;
+    font-size: 17px;
+    color: #666;
+    margin: 5px 0;
+    font-style: normal;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+  .touch-device .custom-range-container {
+    margin-left: 0;
+    width: auto;
+    justify-content: center;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .touch-device .custom-range-container label {
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .touch-device .date-input {
+    font-size: 16px;
+    width: auto;
+    min-width: 120px;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+  .touch-device .apply-btn {
+    font-size: 16px;
+    padding: 8px 16px;
+    white-space: nowrap;
+  }
+  .touch-device .contributions-table {
+    font-size: 15px;
+  }
+  .touch-device .contributions-table th,
+  .touch-device .contributions-table td {
+    padding: 14px 10px;
+  }
+  .touch-device .table-title {
+    font-size: 18px;
+  }
+  .touch-device .tables-wrapper {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .touch-device .table-section {
+    width: 100%;
+    margin-bottom: 20px;
+  }
 </style>
 </head>
 <body>
+<!-- Detecção de touch (igual ao index) -->
+<script>
+  (function() {
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+    }
+  })();
+</script>
 
 <nav class="navbar">
   <a href="index.html">Histórico</a>
