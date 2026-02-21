@@ -16,7 +16,7 @@
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  /* ----- ESTILOS GLOBAIS (mesma base do index) ----- */
+  /* ----- ESTILOS GLOBAIS ----- */
   html, body {
     margin: 0;
     padding: 0;
@@ -46,7 +46,7 @@
     opacity: 0.8;
   }
 
-  /* ----- CONTEÚDO PRINCIPAL (hoje.html) ----- */
+  /* ----- CONTEÚDO PRINCIPAL ----- */
   .container {
     width: 95%;
     max-width: 1400px;
@@ -131,14 +131,14 @@
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     position: relative;
-    -webkit-overflow-scrolling: touch; /* rolagem suave no iOS */
+    -webkit-overflow-scrolling: touch;
   }
   .hoje-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: "Montserrat";
+    font-family: "Montserrat", sans-serif;
     font-size: 13px;
-    min-width: 600px; /* garante rolagem horizontal em telas pequenas */
+    min-width: 600px;
   }
   .hoje-table th {
     background-color: #164CAD;
@@ -148,6 +148,12 @@
     position: relative;
     cursor: pointer;
     user-select: none;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+    line-height: 1.2;
+    height: 50px;
+    font-weight: 500;
   }
   .hoje-table th.sortable:hover {
     background-color: #1e5bbf;
@@ -160,13 +166,18 @@
     padding: 10px 8px;
     border-bottom: 1px solid #e0e0e0;
     text-align: center;
-    white-space: nowrap; /* evita quebra de linha, forçando a rolagem */
+    white-space: nowrap;
+    height: 40px;
+    vertical-align: middle;
   }
   .hoje-table tbody tr:nth-child(even) {
     background-color: #f9f9f9;
   }
+  .hoje-table tbody tr:hover {
+    background-color: #f0f5ff;
+  }
 
-  /* ----- REGRAS PARA DISPOSITIVOS TOUCH (copiadas do index e adaptadas) ----- */
+  /* ----- REGRAS PARA DISPOSITIVOS TOUCH (idênticas ao index.html) ----- */
   .touch-device {
     font-size: 18px;
   }
@@ -176,29 +187,20 @@
     font-size: 18px;
   }
 
-  /* Ajustes para a tabela em touch - igual ao index */
+  /* Tabela em touch: espelho das .contributions-table do index */
   .touch-device .hoje-table {
     font-size: 15px;
     min-width: 750px;
   }
   .touch-device .hoje-table th,
   .touch-device .hoje-table td {
-    padding: 14px 10px; /* mesmo padding do index */
+    padding: 14px 10px;
   }
 
-  /* Larguras mínimas para cada coluna em touch (evita compressão) */
-  .touch-device .hoje-table th:nth-child(1),
-  .touch-device .hoje-table td:nth-child(1) { min-width: 120px; } /* Ação */
-  .touch-device .hoje-table th:nth-child(2),
-  .touch-device .hoje-table td:nth-child(2) { min-width: 150px; } /* Setor */
-  .touch-device .hoje-table th:nth-child(3),
-  .touch-device .hoje-table td:nth-child(3) { min-width: 100px; } /* Peso */
-  .touch-device .hoje-table th:nth-child(4),
-  .touch-device .hoje-table td:nth-child(4) { min-width: 100px; } /* Variação */
-  .touch-device .hoje-table th:nth-child(5),
-  .touch-device .hoje-table td:nth-child(5) { min-width: 120px; } /* Contribuição */
-  .touch-device .hoje-table th:nth-child(6),
-  .touch-device .hoje-table td:nth-child(6) { min-width: 120px; } /* % Contrib */
+  /* Título da tabela em touch: igual ao .table-title do index */
+  .touch-device .header-container .table-title {
+    font-size: 18px;
+  }
 
   /* Caixa do Ibovespa em touch */
   .touch-device .ibovespa-box {
@@ -215,21 +217,6 @@
   .touch-device .refresh-img {
     width: 36px;
   }
-
-  /* Título da tabela em touch - igual ao index (18px) */
-  .touch-device .header-container .table-title {
-    font-size: 18px;
-  }
-
-  /* (Regras adicionais do index, mantidas para consistência, mas não interferem) */
-  .touch-device .period-controls { flex-direction: column; align-items: center; }
-  .touch-device .period-buttons { flex-wrap: nowrap; overflow-x: auto; justify-content: center; -webkit-overflow-scrolling: touch; padding-bottom: 10px; width: 100%; scrollbar-width: thin; }
-  .touch-device .period-btn { flex-shrink: 0; font-size: 16px; padding: 10px 18px; }
-  .touch-device .period-separator { display: block; font-size: 17px; color: #666; margin: 5px 0; font-style: normal; font-weight: 300; letter-spacing: 0.5px; }
-  .touch-device .custom-range-container { margin-left: 0; width: auto; justify-content: center; background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px 15px; flex-wrap: nowrap; gap: 8px; }
-  .touch-device .custom-range-container label { font-size: 16px; white-space: nowrap; }
-  .touch-device .date-input { font-size: 16px; width: auto; min-width: 120px; padding: 8px 10px; white-space: nowrap; }
-  .touch-device .apply-btn { font-size: 16px; padding: 8px 16px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -239,7 +226,6 @@
     const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     if (isTouchDevice) {
       document.body.classList.add('touch-device');
-      console.log('Touch device detected - classe adicionada');
     }
   })();
 </script>
