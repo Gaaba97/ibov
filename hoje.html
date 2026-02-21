@@ -173,20 +173,17 @@
 
   /* Navbar em touch: exatamente como no index */
   .touch-device .navbar {
-    font-size: 18px; /* só aumenta a fonte, mantendo layout */
+    font-size: 18px;
   }
 
-  /* Ajustes para a tabela em touch */
+  /* Ajustes para a tabela em touch - igual ao index */
   .touch-device .hoje-table {
     font-size: 15px;
-    min-width: 750px; /* um pouco maior para dedos */
+    min-width: 750px;
   }
   .touch-device .hoje-table th,
   .touch-device .hoje-table td {
-    padding: 14px 12px; /* mais espaçamento para toque */
-  }
-  .touch-device .hoje-table th {
-    padding: 16px 12px;
+    padding: 14px 10px; /* mesmo padding do index */
   }
 
   /* Larguras mínimas para cada coluna em touch (evita compressão) */
@@ -219,9 +216,9 @@
     width: 36px;
   }
 
-  /* Título da tabela em touch */
+  /* Título da tabela em touch - igual ao index (18px) */
   .touch-device .header-container .table-title {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   /* (Regras adicionais do index, mantidas para consistência, mas não interferem) */
@@ -242,7 +239,7 @@
     const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     if (isTouchDevice) {
       document.body.classList.add('touch-device');
-      console.log('Touch device detected - classe adicionada'); // opcional, para debug
+      console.log('Touch device detected - classe adicionada');
     }
   })();
 </script>
