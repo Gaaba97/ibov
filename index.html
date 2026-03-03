@@ -778,7 +778,12 @@
         let tabela2 = dados.tabela2 || [];
         let tabela3 = dados.tabela3 || [];
 
-        if (variacaoIbov < 0) {
+        // Ibov subiu → maior contribuição primeiro (decrescente)
+        // Ibov caiu  → menor contribuição primeiro (crescente, ou seja, mais negativa primeiro)
+        if (variacaoIbov >= 0) {
+          tabela2 = [...tabela2].sort((a, b) => b.contribuicao - a.contribuicao);
+          tabela3 = [...tabela3].sort((a, b) => b.contribuicao - a.contribuicao);
+        } else {
           tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
           tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
         }
