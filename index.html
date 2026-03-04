@@ -767,7 +767,6 @@
 
         atualizarGrafico(dados.chartData);
 
-        // --- CÁLCULO DA VARIAÇÃO DO IBOV NO PERÍODO ---
         let variacaoIbov = 0;
         if (dados.chartData && dados.chartData.length >= 2) {
           const primeiro = dados.chartData[0].y;
@@ -775,30 +774,15 @@
           variacaoIbov = ultimo - primeiro;
         }
 
-        // Recebe as tabelas do backend
         let tabela1 = dados.tabela1 || [];
         let tabela2 = dados.tabela2 || [];
         let tabela3 = dados.tabela3 || [];
 
-        // --- ORDENAÇÃO FIXA: SEMPRE DO MAIOR PARA O MENOR CONTRIBUIÇÃO ---
-        // Aplica ordenação decrescente pela contribuição nas tabelas 2 e 3
-        tabela2 = [...tabela2].sort((a, b) => b.contribuicao - a.contribuicao);
-        tabela3 = [...tabela3].sort((a, b) => b.contribuicao - a.contribuicao);
+        if (variacaoIbov < 0) {
+          tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
+          tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
+        }
 
-        // --- CRIA LINHA FIXA DO IBOVESPA PARA CADA TABELA ---
-        const linhaIbovespa = {
-          nome: 'Ibovespa',
-          variacao: variacaoIbov,
-          contribuicao: variacaoIbov,  // A contribuição total é a própria variação do índice
-          peso: '100%'
-        };
-
-        // Adiciona a linha do Ibovespa ao final de cada tabela
-        tabela1.push(linhaIbovespa);
-        tabela2.push(linhaIbovespa);
-        tabela3.push(linhaIbovespa);
-
-        // Preenche as tabelas
         preencherTabela1(tabela1);
         preencherTabela2(tabela2);
         preencherTabela3(tabela3);
