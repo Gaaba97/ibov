@@ -778,9 +778,10 @@
         let tabela2 = dados.tabela2 || [];
         let tabela3 = dados.tabela3 || [];
 
+        // CORREÇÃO: ordenar por variação (menor para maior) quando Ibovespa cai
         if (variacaoIbov < 0) {
-          tabela2 = [...tabela2].sort((a, b) => a.contribuicao - b.contribuicao);
-          tabela3 = [...tabela3].sort((a, b) => a.contribuicao - b.contribuicao);
+          tabela2 = [...tabela2].sort((a, b) => a.variacao - b.variacao);
+          tabela3 = [...tabela3].sort((a, b) => a.variacao - b.variacao);
         }
 
         preencherTabela1(tabela1);
